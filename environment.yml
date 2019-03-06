@@ -1,8 +1,10 @@
 name: idg_dream
 channels:
   - pytorch
+  - conda-forge
   - defaults
 dependencies:
+  - biopython
   - blas=1.0=mkl
   - ca-certificates=2019.1.23=0
   - certifi=2018.11.29=py37_0
