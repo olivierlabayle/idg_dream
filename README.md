@@ -13,7 +13,9 @@ database dedicated to the project.
 
 To start the postgres container, run :
 
-`docker-compose -f chembl_db/docker-compose.yml up `
+`IDG_DREAM_DB_PORT=5432 docker-compose -f chembl_db/docker-compose.yml up `
+
+Note that IDG_DREAM_DB_PORT may be any port you like. 
 
 Then to restore the data you will need to run through the following procedure in order.
 
@@ -21,6 +23,7 @@ Then to restore the data you will need to run through the following procedure in
 
 
 You can download the postgres dump from :
+
 [download chembl database](ftp://ftp.ebi.ac.uk/pub/databases/chembl/ChEMBLdb/latest/)
 
 
@@ -28,13 +31,19 @@ Extract the files and upload the content of the previous download to the databas
 
 `cat chembl_24_postgresql.dmp | docker exec -i idg-dream-db pg_restore -O --username=postgres -d idg_dream`
 
-This may take a moment. Note that `chembl_24_postgresql.dmp` filename will depend on the time of release.
- 
+Note that `chembl_24_postgresql.dmp` filename will depend on the time of release.
+
+This may take a moment. 
  
 ### Restore UNIPROT
 
-For now we will only use the protein sequence thus require only the fasta dump. You can \
+For now we will only use the protein sequence thus requiring only the fasta dump. You can 
 get it from :
+
 [download uniprot](https://www.uniprot.org/downloads)
 
-Extract the file and run `bin/import_uniprot.py`
+Extract the file and run `bin/import_uniprot.py FASTA_PATH --db-port=5432`
+
+Again, the port is the one you chose earlier.
+
+This can take some time too.
