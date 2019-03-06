@@ -25,7 +25,8 @@ You can download the data from :
 
 Extract the files and upload the content of the previous download to the database by running :
 
-`cat chembl_24_postgresql.dmp | docker exec -i chembl_db_chembl_1 pg_restore -U postgres -d chembl_24`
+`cat chembl_24_postgresql.dmp | docker exec -i idg-dream-db pg_restore -O --username=postgres -d idg_dream`
 
+This may take a moment.
 
 ### Restore UNIPROT

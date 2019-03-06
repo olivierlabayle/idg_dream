@@ -1,0 +1,8 @@
+version: '3'
+services:
+  idg-dream-db:
+    build: .
+    image: idg-dream-db:1.0
+    container_name: idg-dream-db
+    ports:
+     - "${IDG_DREAM_DB_PORT:-5432}:5432"
