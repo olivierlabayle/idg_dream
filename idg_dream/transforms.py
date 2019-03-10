@@ -1,5 +1,8 @@
+import itertools
+
 import pandas as pd
-from sqlalchemy import text, create_engine
+from Bio.Alphabet.IUPAC import ExtendedIUPACProtein
+from sqlalchemy import text
 
 
 class SequenceLoader:
@@ -44,6 +47,39 @@ class ColumnFilter:
 
     def transform(self, X):
         return X[self.colnames]
+
+
+class Splitter:
+    def __init__(self, compound_column, protein_column):
+        self.compound_column = compound_column
+        self.protein_column = protein_column
+
+    def transform(self, X):
+        return X[self.compound_column], X[self.protein_column]
+
+
+class ProteinEncoder:
+    def __init__(self, kmer_size):
+        self.kmer_size = kmer_size
+        self.kmers_mapping = dict((''.join(letters), index) for index, letters in
+                                  enumerate(itertools.product(ExtendedIUPACProtein.letters, repeat=self.kmer_size)))
+
+    def _transform(self, sequence):
+        n = len(sequence)
+        last_amino_acid_index = n - n % self.kmer_size
+        return [self.kmers_mapping[sequence[i:i + self.kmer_size]] for i in
+                range(0, last_amino_acid_index, self.kmer_size)]
+
+    def transform(self, X):
+        return X.apply(self._transform)
+
+
+class ECFPTransformer:
+    def __init__(self, radius):
+        self.radius = radius
+
+    def transform(self, X):
+        return X
 
 
 if __name__ == '__main__':

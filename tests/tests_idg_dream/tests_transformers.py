@@ -4,7 +4,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from idg_dream.settings.test import DB_PORT
 
-from idg_dream.transforms import SequenceLoader, ColumnFilter, InchiLoader
+from idg_dream.transforms import SequenceLoader, ColumnFilter, InchiLoader, ProteinEncoder
 
 
 class TestSequenceLoader(unittest.TestCase):
@@ -104,3 +104,21 @@ class TestColumnFilter(unittest.TestCase):
                           ['GGTGACG', 1]],
                          columns=["sequence", "compound_id"])
         )
+
+
+class TestProteinEncoder(unittest.TestCase):
+    transformer = ProteinEncoder(kmer_size=3)
+
+    def test_transform(self):
+        X = pd.Series(["ACGTGATAGT", "ATCTAGATGGTC"])
+        X_transformed = self.transformer.transform(X)
+        pd.testing.assert_series_equal(X_transformed, pd.Series([[31, 10946, 10821],
+                                                                 [417, 10821, 421, 3797]]))
+
+    def test_transform_k_equal_1(self):
+        transformer = ProteinEncoder(kmer_size=1)
+        X = pd.Series(["ACG", "GGTC"])
+        X_transformed = transformer.transform(X)
+        print(X_transformed)
+        pd.testing.assert_series_equal(X_transformed, pd.Series([[0, 1, 5],
+                                                                 [5, 5, 16, 1]]))
