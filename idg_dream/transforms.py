@@ -17,7 +17,7 @@ class SequenceLoader:
     def transform(self, X):
         query = self.build_query(X['target_id'].unique().tolist())
         sequences = pd.read_sql(query, self.engine)
-        return X.merge(sequences, how="inner", on="target_id")
+        return X.merge(sequences, how="left", on="target_id")
 
 
 class InchiLoader:
@@ -35,7 +35,7 @@ class InchiLoader:
     def transform(self, X):
         query = self.build_query(X["standard_inchi_key"].unique().tolist())
         inchis = pd.read_sql(query, self.engine)
-        return X.merge(inchis, how="inner", on="standard_inchi_key")
+        return X.merge(inchis, how="left", on="standard_inchi_key")
 
 
 class ColumnFilter:

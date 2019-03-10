@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 import pandas as pd
 from sqlalchemy import create_engine
 from idg_dream.settings.test import DB_PORT
@@ -35,7 +36,8 @@ class TestSequenceLoader(unittest.TestCase):
         expected_df = pd.DataFrame([['Q9Y4K4', 0, 'ACGTG'],
                                     ['Q9Y478', 1, 'GTGTGG'],
                                     ['Q9Y4K4', 2, 'ACGTG'],
-                                    ['Q9UL54', 3, 'CCTAGTAA']],
+                                    ['Q9UL54', 3, 'CCTAGTAA'],
+                                    ["UNKNOWN_ID", 4, np.nan]],
                                    columns=['target_id', 'index_column', 'sequence'])
         X_transformed = X_transformed.sort_values('index_column')
         X_transformed.index = list(range(len(X_transformed)))
@@ -77,7 +79,8 @@ class TestInchiLoader(unittest.TestCase):
              ['YOMWDCALSDWFSV-UHFFFAOYSA-N', 1,
               'InChI=1S/C18H16ClN3O3/c1-10-7-14(22-18(25)21-15(23)9-20-22)8-11(2)16(10)17(24)12-3-5-13(19)6-4-12/h3-9,17,24H,1-2H3,(H,21,23,25)'],
              ['OWRSAHYFSSNENM-UHFFFAOYSA-N', 2,
-              'InChI=1S/C17H12ClN3O3/c1-10-8-11(21-17(24)20-15(22)9-19-21)6-7-12(10)16(23)13-4-2-3-5-14(13)18/h2-9H,1H3,(H,20,22,24)']],
+              'InChI=1S/C17H12ClN3O3/c1-10-8-11(21-17(24)20-15(22)9-19-21)6-7-12(10)16(23)13-4-2-3-5-14(13)18/h2-9H,1H3,(H,20,22,24)'],
+             ["UNKNOWN_INCHI_KEY", 3, np.nan]],
             columns=['standard_inchi_key', 'index_column', 'standard_inchi'])
         X_transformed = X_transformed.sort_values('index_column')
         X_transformed.index = list(range(len(X_transformed)))
