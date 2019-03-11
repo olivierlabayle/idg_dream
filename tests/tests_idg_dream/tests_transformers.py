@@ -4,7 +4,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from idg_dream.settings.test import DB_PORT
 
-from idg_dream.transforms import SequenceLoader, ColumnFilter, InchiLoader, ProteinEncoder, ECFPEncoder
+from idg_dream.transformers import SequenceLoader, ColumnFilter, InchiLoader, ProteinEncoder, ECFPEncoder
 
 
 class TestSequenceLoader(unittest.TestCase):
