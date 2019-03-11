@@ -2,6 +2,7 @@ import itertools
 
 import pandas as pd
 from Bio.Alphabet.IUPAC import ExtendedIUPACProtein
+from rdkit.Chem import MolFromInchi, AllChem
 from sqlalchemy import text
 
 
@@ -74,12 +75,19 @@ class ProteinEncoder:
         return X.apply(self._transform)
 
 
-class ECFPTransformer:
-    def __init__(self, radius):
+class ECFPEncoder:
+    def __init__(self, radius, dim=2**20):
         self.radius = radius
+        self.dim = dim
+
+    def _transform(self, inchi):
+        mol = MolFromInchi(inchi)
+        info = {}
+        AllChem.GetMorganFingerprintAsBitVect(mol, self.radius, self.dim, bitInfo=info)
+        return list(info.keys())
 
     def transform(self, X):
-        return X
+        return X.apply(self._transform)
 
 
 if __name__ == '__main__':
