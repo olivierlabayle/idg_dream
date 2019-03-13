@@ -72,7 +72,8 @@ class ProteinEncoder:
                 range(0, last_amino_acid_index, self.kmer_size)]
 
     def transform(self, X):
-        return X.apply(self._transform)
+        X['kmers_encoding'] = X['sequence'].apply(self._transform)
+        return X
 
 
 class ECFPEncoder:
@@ -87,7 +88,8 @@ class ECFPEncoder:
         return list(info.keys())
 
     def transform(self, X):
-        return X.apply(self._transform)
+        X['ecfp_encoding'] = X['standard_inchi'].apply(self._transform)
+        return X
 
 
 if __name__ == '__main__':
