@@ -2,11 +2,7 @@ import pandas as pd
 from torch.utils.data import DataLoader, Dataset
 
 
-def load_training_data(path, nrows=None):
-    df = pd.read_csv(path, sep=",", header=0, nrows=nrows)
-    df.dropna(how="all", subset=["compound_id", "standard_inchi_key"], inplace=True)
-    df.dropna(how="all", subset=["target_id", "gene_names"], inplace=True)
-    return df
+
 
 
 class IDGDataset(Dataset):

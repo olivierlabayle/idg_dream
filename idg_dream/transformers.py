@@ -56,7 +56,7 @@ class Splitter:
         self.protein_column = protein_column
 
     def transform(self, X):
-        return X[self.compound_column], X[self.protein_column]
+        return X[self.protein_column], X[self.compound_column]
 
 
 class ProteinEncoder:
@@ -77,7 +77,7 @@ class ProteinEncoder:
 
 
 class ECFPEncoder:
-    def __init__(self, radius, dim=2**20):
+    def __init__(self, radius, dim=2 ** 20):
         self.radius = radius
         self.dim = dim
 

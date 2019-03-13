@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Import uniprot.
+Import uniprot to the idg_dream database.
 
 Usage:
   naval_fate FASTA_PATH [--db-port=P]
