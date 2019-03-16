@@ -16,47 +16,68 @@ import docopt
 import pandas as pd
 from sqlalchemy import create_engine
 
+USED_COLS = ['standard_type', 'standard_units', 'standard_inchi_key', 'target_id', 'standard_value',
+             'standard_relation']
 
-def drop_training_set(engine):
-    engine.execute("DROP TABLE IF EXISTS training_set;")
+KD_TYPES = ['-LOG KD', 'KD', 'Kd', 'LOG 1/KD', 'LOG KD', 'LOGKD', 'PKD']
 
-
-def drop_dtc_table(engine):
-    engine.execute("DROP TABLE IF EXISTS dtc_table;")
-
-
-def load_training_data(path, chunk_size):
-    for chunk in pd.read_csv(path, sep=",", header=0, chunksize=chunk_size):
-        yield chunk
+KD_UNITS = ["NM", "-LOG(10) M"]
 
 
-def process_chunk(chunk):
-    chunk.dropna(how="all", subset=["standard_inchi_key"], inplace=True)
-    chunk.dropna(how="all", subset=["target_id"], inplace=True)
-    return chunk[["standard_inchi_key", "target_id"]]
+def load_training_data(path):
+    return pd.read_csv(path, sep=",", header=0, usecols=USED_COLS)
+
+
+def process_data(data):
+    """
+    For more information about why I decided to apply those filters, please have a look at data_analysis.ipynb
+    :param chunk: pd.DataFrame
+    :return: pd.DataFrame
+    """
+
+    def convert(x):
+        unit = x['standard_units']
+        value = x['standard_value']
+        if unit == "NM":
+            return value * 1e-9
+        elif unit == "-LOG(10) M":
+            return 10 ** (-value)
+        else:
+            raise RuntimeError
+
+    # Filter Na
+    data.dropna(how="any", subset=USED_COLS, inplace=True)
+    # Only keep measurements that are KD related
+    data = data[data.standard_type.isin(KD_TYPES)]
+    # Only keep measurements with some defined units
+    data = data[data.standard_units.isin(KD_UNITS)]
+    # Convert to M valued units
+    data['standard_value'] = data.apply(convert, axis=1)
+    # Keep only equal relation measurements
+    data = data[data.standard_relation == '=']
+    # Remove multiple targets measurements
+    data = data[~data.target_id.str.contains(',')]
+    # Remove (target,compound) pairs with more than one measurement
+    key = ['standard_inchi_key', 'target_id']
+    grouped = data.groupby(key).size()
+    join_condition = grouped[grouped == 1].reset_index()[key]
+    data = data.merge(join_condition, on=key, how='inner')
+    # Remove outliers measurements
+    data = data[(data.standard_value <= 1.7e-3) & (data.standard_value >= 1.e-10)]
+    # We will only use the following columns
+    return data[["standard_inchi_key", "target_id", "standard_value"]]
 
 
 def create_training_set(db_port, data_path, chunk_size):
     engine = create_engine(f'postgresql+pg8000://idg_dream@127.0.0.1:{db_port}/idg_dream', echo=False)
-    drop_training_set(engine)
-    for chunk in load_training_data(data_path, chunk_size=chunk_size):
-        processed_chunk = process_chunk(chunk)
-        n = len(processed_chunk)
-        if n > 0:
-            print(f"Processing new chunk of size :{n}.")
-            processed_chunk.to_sql("training_set", con=engine, index=False, if_exists='append')
-
-
-def create_dtc_table(db_port, data_path, chunk_size):
-    engine = create_engine(f'postgresql+pg8000://idg_dream@127.0.0.1:{db_port}/idg_dream', echo=False)
-    connection = engine.connect()
-    drop_dtc_table(engine)
-    for chunk in load_training_data(data_path, chunk_size=chunk_size):
-        print(f"Inserting new chunk of size :{len(chunk)}.")
-        chunk.to_sql("dtc_table", con=connection, index=False, if_exists='append')
-    connection.close()
+    data = load_training_data(data_path)
+    print(f"Processing data.")
+    processed_data = process_data(data)
+    assert len(processed_data) == 19269
+    print(f"Creating training_set table.")
+    processed_data.to_sql("training_set", con=engine, index=False, if_exists='replace')
 
 
 if __name__ == '__main__':
     args = docopt.docopt(__doc__)
-    create_dtc_table(args['--db-port'], args['DATA_PATH'], int(float(args["--chunk-size"])))
+    create_training_set(args['--db-port'], args['DATA_PATH'], int(float(args["--chunk-size"])))
