@@ -4,6 +4,7 @@ channels:
 dependencies:
   - biopython
   - python=3.7.2=h0371630_0
+  - rdkit==2018.09.2
   - pip:
     - scikit-learn==0.20.3
     - scipy==1.2.1

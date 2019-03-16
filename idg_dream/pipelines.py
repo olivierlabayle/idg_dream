@@ -4,7 +4,7 @@ from idg_dream.models import Baseline
 from idg_dream.transformers import InchiLoader, SequenceLoader, ProteinEncoder, ECFPEncoder, Splitter
 
 
-def baseline_pipeline(engine, kmer_size=3, radius=2, ecfp_dim=2 ** 20, embedding_dim=10, lr=0.1, max_epochs=5,
+def baseline(engine, kmer_size=3, radius=2, ecfp_dim=2 ** 20, embedding_dim=10, lr=0.1, max_epochs=5,
                       device='cpu'):
     protein_encoder = ProteinEncoder(kmer_size=kmer_size)
     num_kmers = len(protein_encoder.kmers_mapping)
@@ -26,3 +26,5 @@ def baseline_pipeline(engine, kmer_size=3, radius=2, ecfp_dim=2 ** 20, embedding
             ('baseline_model', net)
         ]
     )
+
+

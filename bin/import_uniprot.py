@@ -15,9 +15,11 @@ import pandas as pd
 from Bio import SeqIO
 from sqlalchemy import create_engine
 
+from idg_dream.utils import get_engine
+
 
 def upload_uniprot(fasta_path, db_port=5432):
-    engine = create_engine(f'postgresql+pg8000://idg_dream@127.0.0.1:{db_port}/idg_dream', echo=False)
+    engine = get_engine(db_port)
     uniprot_df = pd.DataFrame(
         [[record.id.split('|')[1], str(record.seq)] for record in SeqIO.parse(fasta_path, "fasta")],
         columns=["uniprot_id", "sequence"])
