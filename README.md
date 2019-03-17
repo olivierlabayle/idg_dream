@@ -35,6 +35,7 @@ Note that `chembl_24_postgresql.dmp` filename will depend on the time of release
 
 This may take a moment. 
  
+ 
 ### Restore UNIPROT
 
 For now we will only use the protein sequence thus requiring only the fasta dump. You can 
