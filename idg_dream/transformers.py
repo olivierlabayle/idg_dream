@@ -111,3 +111,13 @@ class ECFPEncoder(TransformerMixin):
         return X
 
 
+class DfToDict(TransformerMixin):
+    def __init__(self, protein_colname, compound_colname):
+        self.protein_colname = protein_colname
+        self.compound_colname = compound_colname
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        return {'protein_input': X[self.protein_colname].values, 'compound_input': X[self.compound_colname].values}

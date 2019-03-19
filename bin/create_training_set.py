@@ -14,6 +14,7 @@ Options:
 import docopt
 import pandas as pd
 
+from idg_dream.transformers import SequenceLoader, InchiLoader
 from idg_dream.utils import get_engine
 
 USED_COLS = ['standard_type', 'standard_units', 'standard_inchi_key', 'target_id', 'standard_value',
@@ -28,7 +29,7 @@ def load_training_data(path):
     return pd.read_csv(path, sep=",", header=0, usecols=USED_COLS)
 
 
-def process_data(data):
+def process_data(data, engine):
     """
     For more information about why I decided to apply those filters, please have a look at data_analysis.ipynb
     :param chunk: pd.DataFrame
@@ -64,16 +65,23 @@ def process_data(data):
     data = data.merge(join_condition, on=key, how='inner')
     # Remove outliers measurements
     data = data[(data.standard_value <= 1.7e-3) & (data.standard_value >= 1.e-10)]
+    # Check the number of lines corresponds to the data analysis
+    assert len(data) == 19269
+    # Remove samples for which the protein_id has no sequence
+    sequence_loader = SequenceLoader(engine=engine)
+    data = sequence_loader.transform(data).dropna(how="any")
+    # Remove samples for which the compound_id has no inchi
+    inchi_loader = InchiLoader(engine=engine)
+    data = inchi_loader.transform(data).dropna(how='any')
     # We will only use the following columns
-    return data[["standard_inchi_key", "target_id", "standard_value"]]
+    return data[["standard_inchi_key", "target_id", "standard_inchi", "sequence", "standard_value"]]
 
 
 def create_training_set(db_port, data_path):
     engine = get_engine(db_port)
     data = load_training_data(data_path)
     print(f"Processing data.")
-    processed_data = process_data(data)
-    assert len(processed_data) == 19269
+    processed_data = process_data(data, engine)
     print(f"Creating training_set table.")
     processed_data.to_sql("training_set", con=engine, index=False, if_exists='replace')
 
