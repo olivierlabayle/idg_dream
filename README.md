@@ -48,3 +48,8 @@ Extract the file and run `bin/import_uniprot.py FASTA_PATH --db-port=5432`
 Again, the port is the one you chose earlier.
 
 This can take some time too.
+
+
+### Tests
+
+In order to run tests, you will need a postgres image running

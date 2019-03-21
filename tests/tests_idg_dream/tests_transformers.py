@@ -8,7 +8,7 @@ from idg_dream.transformers import SequenceLoader, ColumnFilter, InchiLoader, Pr
 
 
 class TestSequenceLoader(unittest.TestCase):
-    engine = create_engine(f'postgresql+pg8000://idg_dream@127.0.0.1:{DB_PORT}/idg_dream', echo=False)
+    engine = create_engine(f'postgresql+pg8000://idg_dream:idg_dream@127.0.0.1:{DB_PORT}/idg_dream', echo=False)
     transformer = SequenceLoader(engine=engine)
 
     @classmethod
@@ -45,7 +45,7 @@ class TestSequenceLoader(unittest.TestCase):
 
 
 class TestInchiLoader(unittest.TestCase):
-    engine = create_engine(f'postgresql+pg8000://idg_dream@127.0.0.1:{DB_PORT}/idg_dream', echo=False)
+    engine = create_engine(f'postgresql+pg8000://idg_dream:idg_dream@127.0.0.1:{DB_PORT}/idg_dream', echo=False)
     transformer = InchiLoader(engine)
 
     @classmethod
