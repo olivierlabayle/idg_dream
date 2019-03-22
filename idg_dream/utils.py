@@ -53,14 +53,12 @@ def collate_to_sparse_tensors(batch, protein_input_size=26**3, compound_input_si
     proteins_values = [1] * len(proteins_indexes[0])
     compounds_values = [1] * len(compounds_indexes[0])
 
-    protein_input = torch.sparse.FloatTensor(torch.LongTensor(proteins_indexes, device=device),
-                                             torch.FloatTensor(proteins_values, device=device),
-                                             torch.Size([n_samples, protein_input_size]),
-                                             device=device)
+    protein_input = torch.sparse.FloatTensor(torch.LongTensor(proteins_indexes),
+                                             torch.FloatTensor(proteins_values),
+                                             torch.Size([n_samples, protein_input_size])).to(device)
 
-    compound_input = torch.sparse.FloatTensor(torch.LongTensor(compounds_indexes, device=device),
-                                             torch.FloatTensor(compounds_values, device=device),
-                                             torch.Size([n_samples, compound_input_size]),
-                                              device=device)
+    compound_input = torch.sparse.FloatTensor(torch.LongTensor(compounds_indexes),
+                                             torch.FloatTensor(compounds_values),
+                                             torch.Size([n_samples, compound_input_size])).to(device)
 
-    return ({"protein_input": protein_input, "compound_input": compound_input}, torch.FloatTensor(y, device=device))
+    return ({"protein_input": protein_input, "compound_input": compound_input}, torch.FloatTensor(y).to(device))
