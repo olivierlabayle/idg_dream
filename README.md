@@ -29,11 +29,9 @@ You can download the postgres dump from :
 
 Extract the files and upload the content of the previous download to the database by running :
 
-`cat chembl_24_postgresql.dmp | docker exec -i idg-dream-db pg_restore -O --username=postgres -d idg_dream`
+`cat PATH_TO_CHEMBL_DUMP | docker exec -i idg-dream-db pg_restore -O --username=idg_dream -d idg_dream`
 
-Note that `chembl_24_postgresql.dmp` filename will depend on the time of release.
-
-This may take a moment. 
+This takes some time. 
  
  
 ### Restore UNIPROT
@@ -43,7 +41,7 @@ get it from :
 
 [download uniprot](https://www.uniprot.org/downloads)
 
-Extract the file and run `bin/import_uniprot.py FASTA_PATH --db-port=5432`
+Extract the file and run `bin/import_uniprot.py FASTA_PATH --db-port=IDG_DREAM_DB_PORT`
 
 Again, the port is the one you chose earlier.
 
@@ -52,4 +50,7 @@ This can take some time too.
 
 ### Tests
 
-In order to run tests, you will need a postgres image running
+In order to run tests, you will need a postgres image running, you can use the given
+docker-compose file :
+
+`docker-compose -f idg_dream_db/docker-compose.test.yml up -d`
