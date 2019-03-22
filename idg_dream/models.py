@@ -35,24 +35,17 @@ class Baseline(nn.Module):
         self.num_kmers = num_kmers
         self.num_fingerprints = num_fingerprints
         self.embedding_dim = embedding_dim
-        self.relu = nn.ReLU()
-        self.protein_linear = SparseLinear(num_kmers, self.embedding_dim)
-        self.compound_linear = SparseLinear(num_fingerprints, self.embedding_dim)
-        self.joined_linear = nn.Linear(2 * self.embedding_dim, self.embedding_dim)
-        self.out_linear = nn.Linear(self.embedding_dim, 1)
-        # self.output_branch = nn.Sequential(
-        #     nn.Linear(2 * self.embedding_dim, self.embedding_dim),
-        #     nn.ReLU(),
-        #     nn.Linear(self.embedding_dim, 1)
-        # )
+        self.protein_branch = nn.Sequential(SparseLinear(num_kmers, self.embedding_dim), nn.ReLU())
+        self.compound_branch = nn.Sequential(SparseLinear(num_fingerprints, self.embedding_dim), nn.ReLU())
+        self.output_branch = nn.Sequential(
+            nn.Linear(2 * self.embedding_dim, self.embedding_dim),
+            nn.ReLU(),
+            nn.Linear(self.embedding_dim, 1)
+        )
 
     def forward(self, protein_input, compound_input):
-        protein_embedding = self.protein_linear(protein_input)
-        protein_embedding = self.relu(protein_embedding)
-        compound_embedding = self.compound_linear(compound_input)
-        compound_embedding = self.relu(compound_embedding)
+        protein_embedding = self.protein_branch(protein_input)
+        compound_embedding = self.compound_branch(compound_input)
         joined = torch.cat((protein_embedding, compound_embedding), dim=1)
-        joined = self.joined_linear(joined)
-        joined = self.relu(joined)
-        out = self.out_linear(joined)
-        return out
+        return self.output_branch(joined)
+
