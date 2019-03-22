@@ -1,3 +1,4 @@
+import torch
 from sklearn.pipeline import Pipeline
 from skorch.regressor import NeuralNetRegressor
 from idg_dream.models import Baseline
@@ -27,7 +28,8 @@ def baseline(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding_dim
     """
     protein_encoder = ProteinEncoder(kmer_size=kmer_size)
     num_kmers = len(protein_encoder.kmers_mapping)
-    collate_fn = partial(collate_to_sparse_tensors, protein_input_size=num_kmers, compound_input_size=ecfp_dim)
+    collate_fn = partial(collate_to_sparse_tensors,
+                         protein_input_size=num_kmers, compound_input_size=ecfp_dim, device=torch.device(device))
     net = NeuralNetRegressor(module=Baseline,
                              module__num_kmers=num_kmers,
                              module__num_fingerprints=ecfp_dim,
