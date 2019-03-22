@@ -1,6 +1,27 @@
 # idg_dream
 IDG Dream challenge
 
+## Working environment
+
+You can install the conda environment by running :
+
+`conda env create -n idg_dream -f environment.yml`
+
+Then activate it :
+
+`conda activate idg_dream`
+
+Depending if you have cuda enabled or not :
+
+`pip install -r cpu_requirements.txt`
+
+or
+
+`pip install -r cuda_9_requirements.txt`
+
+if you have another cuda version, check the pytorch documentation.
+
+
 ## Additional data
 
 In order to use machine learning algorithms we will need additional information about the compounds 
