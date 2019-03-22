@@ -34,7 +34,6 @@ def main(pipeline_name, path_out, db_port, config_path, training_sample_path):
         config_dict.update(config_module.CONFIG[pipeline_name])
 
     pipeline = getattr(idg_dream_pipelines, pipeline_name)(
-        engine=engine,
         **config_dict
 
     )
