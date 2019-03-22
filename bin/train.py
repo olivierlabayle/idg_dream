@@ -41,7 +41,7 @@ def main(pipeline_name, path_out, db_port, config_path, training_sample_path):
     if training_sample_path:
         X, y = load_from_csv(training_sample_path)
     else:
-        X, y = load_from_db(training_sample_path, engine)
+        X, y = load_from_db(engine)
 
     pipeline.fit(X, y)
 
