@@ -13,10 +13,11 @@ Options:
   --config-path=C        Json file containing the pipeline's configuration
 """
 
-import json
+import os
+import sys
 import docopt
 import idg_dream.pipelines as idg_dream_pipelines
-
+from importlib import import_module
 from idg_dream.utils import get_engine, save_pipeline, load_from_csv, load_from_db
 
 
@@ -25,9 +26,12 @@ def main(pipeline_name, path_out, db_port, config_path, training_sample_path):
     if not training_sample_path:
         engine = get_engine(db_port)
 
-    config_dict = {}
+    config_dict = {"engine": engine}
     if config_path:
-        config_dict = json.load(config_path)
+        module_path, module_name = os.path.split(config_path)
+        sys.path.append(module_path)
+        config_module = import_module(os.path.splitext(module_name)[0])
+        config_dict.update(config_module.CONFIG[pipeline_name])
 
     pipeline = getattr(idg_dream_pipelines, pipeline_name)(
         engine=engine,
@@ -38,7 +42,7 @@ def main(pipeline_name, path_out, db_port, config_path, training_sample_path):
     if training_sample_path:
         X, y = load_from_csv(training_sample_path)
     else:
-        X, y = load_from_db(training_sample_path)
+        X, y = load_from_db(training_sample_path, engine)
 
     pipeline.fit(X, y)
 

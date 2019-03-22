@@ -41,7 +41,7 @@ def baseline(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding_dim
                              )
     steps = [('encode_proteins', protein_encoder),
              ('encode_ecfp', ECFPEncoder(radius=radius, dim=ecfp_dim)),
-             ('to_dict', DfToDict(protein_colname='kmers_encoding', compound_colname='ecfp_encoding', )),
+             ('to_dict', DfToDict(protein_colname='kmers_encoding', compound_colname='ecfp_encoding')),
              ('baseline_model', net)]
     if loaders:
         steps = [('load_inchis', InchiLoader(engine)),
