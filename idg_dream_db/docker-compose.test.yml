@@ -1,6 +1,6 @@
 version: '3'
 services:
-  idg-dream-db:
+  idg-dream-db-test:
     image: postgres:9.6
     container_name: idg-dream-db-test
     ports:

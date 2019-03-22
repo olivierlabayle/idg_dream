@@ -8,7 +8,7 @@ Usage:
 
 Options:
   -h --help              Show this screen.
-  --db-port=P            Port on which idg-dream database is listening [default: 5432].
+  --db-port=P            Port on which idg-dream database is listening [default: 5432]
   --training-sample=T    Path to a training sample, if provided, the pipeline will be trained against that sample.
   --config-path=C        Json file containing the pipeline's configuration
 """
@@ -21,14 +21,16 @@ from idg_dream.utils import get_engine, save_pipeline, load_from_csv, load_from_
 
 
 def main(pipeline_name, path_out, db_port, config_path, training_sample_path):
-    engine = get_engine(db_port)
+    engine = None
+    if not training_sample_path:
+        engine = get_engine(db_port)
 
     config_dict = {}
     if config_path:
         config_dict = json.load(config_path)
 
     pipeline = getattr(idg_dream_pipelines, pipeline_name)(
-        engine,
+        engine=engine,
         **config_dict
 
     )
