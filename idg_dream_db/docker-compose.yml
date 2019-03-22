@@ -1,8 +1,11 @@
 version: '3'
 services:
   idg-dream-db:
-    build: .
-    image: idg-dream-db:1.0
+    image: postgres:9.6
     container_name: idg-dream-db
     ports:
      - "${IDG_DREAM_DB_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_USER=idg_dream
+      - POSTGRES_PASSWORD=idg_dream
+      - POSTGRES_DB=idg_dream
