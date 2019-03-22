@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 
 
 def get_engine(db_port, host='127.0.0.1'):
-    return create_engine(f'postgresql+pg8000://idg_dream@{host}:{db_port}/idg_dream', echo=False)
+    return create_engine(f'postgresql+pg8000://idg_dream:idg_dream@{host}:{db_port}/idg_dream', echo=False)
 
 
 def save_pipeline(pipeline, path):
