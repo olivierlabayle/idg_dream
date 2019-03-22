@@ -5,6 +5,7 @@ from Bio.Alphabet.IUPAC import ExtendedIUPACProtein
 from rdkit.Chem import MolFromInchi, AllChem
 from sklearn.base import TransformerMixin
 from sqlalchemy import text
+from scipy.sparse import hstack as sparse_hstack
 
 
 class SequenceLoader(TransformerMixin):
@@ -81,8 +82,11 @@ class ProteinEncoder(TransformerMixin):
     def _transform(self, sequence):
         n = len(sequence)
         last_amino_acid_index = n - n % self.kmer_size
-        return [self.kmers_mapping[sequence[i:i + self.kmer_size]] for i in
-                range(0, last_amino_acid_index, self.kmer_size)]
+        freqs = {}
+        for i in range(0, last_amino_acid_index, self.kmer_size):
+            kmer_id = self.kmers_mapping[sequence[i:i + self.kmer_size]]
+            freqs[kmer_id] = freqs.setdefault(kmer_id, 0) + 1
+        return freqs
 
     def fit(self, X, y=None):
         return self
@@ -109,6 +113,18 @@ class ECFPEncoder(TransformerMixin):
     def transform(self, X):
         X['ecfp_encoding'] = X['standard_inchi'].apply(self._transform)
         return X
+
+
+class SparseJoin(TransformerMixin):
+    def __init__(self, protein_colname, compound_colname):
+        self.protein_colname = protein_colname
+        self.compound_colname = compound_colname
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        return sparse_hstack((X[self.compound_colname].values, X[self.protein_colname].values))
 
 
 class DfToDict(TransformerMixin):
