@@ -5,16 +5,13 @@ import os
 from skorch.dataset import CVSplit
 
 from idg_dream import pipelines
-from idg_dream.utils import get_engine, load_from_csv
-from idg_dream.settings.test import DB_PORT
+from idg_dream.utils import load_from_csv
 
 
 class TestBaselinePipeline(unittest.TestCase):
-    engine = get_engine(db_port=DB_PORT)
-
     def setUp(self):
         torch.manual_seed(0)
-        self.pipeline = pipelines.baseline(engine=self.engine, max_epochs=10)
+        self.pipeline = pipelines.baseline(max_epochs=10)
         self.training_sample_path = os.path.join("tests", "training_sample_100.csv")
 
     def test_fit(self):
@@ -30,7 +27,7 @@ class TestBaselinePipeline(unittest.TestCase):
         )
 
     def test_cross_validate(self):
-        self.pipeline = pipelines.baseline(engine=self.engine, max_epochs=10, train_split=CVSplit(0.2, random_state=0))
+        self.pipeline = pipelines.baseline(max_epochs=10, train_split=CVSplit(0.2, random_state=0))
         X, y = load_from_csv(self.training_sample_path)
         self.pipeline.fit(X, y)
         losses = [(h['epoch'], h['train_loss'], h['valid_loss']) for h in self.pipeline._final_estimator.history]

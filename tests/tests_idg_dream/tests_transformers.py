@@ -5,10 +5,11 @@ from sqlalchemy import create_engine
 from idg_dream.settings.test import DB_PORT
 
 from idg_dream.transformers import SequenceLoader, ColumnFilter, InchiLoader, ProteinEncoder, ECFPEncoder
+from idg_dream.utils import get_engine
 
 
 class TestSequenceLoader(unittest.TestCase):
-    engine = create_engine(f'postgresql+pg8000://idg_dream:idg_dream@127.0.0.1:{DB_PORT}/idg_dream', echo=False)
+    engine = get_engine(db_port=DB_PORT)
     transformer = SequenceLoader(engine=engine)
 
     @classmethod
@@ -45,7 +46,7 @@ class TestSequenceLoader(unittest.TestCase):
 
 
 class TestInchiLoader(unittest.TestCase):
-    engine = create_engine(f'postgresql+pg8000://idg_dream:idg_dream@127.0.0.1:{DB_PORT}/idg_dream', echo=False)
+    engine = get_engine(db_port=DB_PORT)
     transformer = InchiLoader(engine)
 
     @classmethod
