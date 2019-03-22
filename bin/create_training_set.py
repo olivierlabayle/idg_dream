@@ -4,11 +4,12 @@ We will use the standard_inchi_key and the uniprot_id to extract features for ea
 Samples not containing these information are discarded.
 
 Usage:
-  create_training_set.py DATA_PATH [--db-port=P]
+  create_training_set.py DATA_PATH [--db-port=P] [--db-host=H]
 
 Options:
   -h --help        Show this screen.
-  --db-port=P      Port on which idg-dream database is listening [default: 5432].
+  --db-port=P      Port on which idg-dream database is listening [default: 5432]
+  --db-host=H      The host Ip address [default: 127.0.0.1]
 """
 
 import docopt
@@ -77,7 +78,7 @@ def process_data(data, engine):
     return data[["standard_inchi_key", "target_id", "standard_inchi", "sequence", "standard_value"]]
 
 
-def create_training_set(db_port, data_path):
+def create_training_set(db_port, db_host,data_path):
     engine = get_engine(db_port)
     data = load_training_data(data_path)
     print(f"Processing data.")
@@ -88,4 +89,4 @@ def create_training_set(db_port, data_path):
 
 if __name__ == '__main__':
     args = docopt.docopt(__doc__)
-    create_training_set(args['--db-port'], args['DATA_PATH'])
+    create_training_set(args['--db-port'], args['--db-host'], args['DATA_PATH'])
