@@ -32,9 +32,9 @@ def load_from_db(engine):
     return X, y
 
 
-def collate_to_sparse_tensors(batch, protein_input_size=26**3, compound_input_size=1024, device=torch.device("cpu")):
-    proteins_indexes = [[], []],
-    protein_values = []
+def collate_to_sparse_tensors(batch, protein_input_size=26 ** 3, compound_input_size=1024, device=torch.device("cpu")):
+    proteins_indexes = [[], []]
+    proteins_values = []
     compounds_indexes = [[], []]
     y = []
     n_samples = len(batch)
@@ -46,14 +46,13 @@ def collate_to_sparse_tensors(batch, protein_input_size=26**3, compound_input_si
         proteins_indexes[0].extend([i] * len(temp_proteins_indexes))
         prot_col_indexes, values = zip(*temp_proteins_indexes.items())
         proteins_indexes[1].extend(prot_col_indexes)
-        protein_values.extend(values)
+        proteins_values.extend(values)
         # Compound extraction
         compounds_indexes[0].extend([i] * len(temp_compounds_indexes))
         compounds_indexes[1].extend(temp_compounds_indexes)
 
         y.append(sample[1].tolist())
 
-    proteins_values = [1] * len(proteins_indexes[0])
     compounds_values = [1] * len(compounds_indexes[0])
 
     protein_input = torch.sparse.FloatTensor(torch.LongTensor(proteins_indexes),
@@ -61,7 +60,7 @@ def collate_to_sparse_tensors(batch, protein_input_size=26**3, compound_input_si
                                              torch.Size([n_samples, protein_input_size])).to(device)
 
     compound_input = torch.sparse.FloatTensor(torch.LongTensor(compounds_indexes),
-                                             torch.FloatTensor(compounds_values),
-                                             torch.Size([n_samples, compound_input_size])).to(device)
+                                              torch.FloatTensor(compounds_values),
+                                              torch.Size([n_samples, compound_input_size])).to(device)
 
     return ({"protein_input": protein_input, "compound_input": compound_input}, torch.FloatTensor(y).to(device))
