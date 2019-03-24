@@ -33,7 +33,8 @@ def load_from_db(engine):
 
 
 def collate_to_sparse_tensors(batch, protein_input_size=26**3, compound_input_size=1024, device=torch.device("cpu")):
-    proteins_indexes = [[], []]
+    proteins_indexes = [[], []],
+    protein_values = []
     compounds_indexes = [[], []]
     y = []
     n_samples = len(batch)
@@ -41,10 +42,12 @@ def collate_to_sparse_tensors(batch, protein_input_size=26**3, compound_input_si
     for i, sample in enumerate(batch):
         temp_proteins_indexes = sample[0]["protein_input"]
         temp_compounds_indexes = sample[0]["compound_input"]
-
+        # Protein extraction
         proteins_indexes[0].extend([i] * len(temp_proteins_indexes))
-        proteins_indexes[1].extend(temp_proteins_indexes)
-
+        prot_col_indexes, values = zip(*temp_proteins_indexes.items())
+        proteins_indexes[1].extend(prot_col_indexes)
+        protein_values.extend(values)
+        # Compound extraction
         compounds_indexes[0].extend([i] * len(temp_compounds_indexes))
         compounds_indexes[1].extend(temp_compounds_indexes)
 
