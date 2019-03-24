@@ -1,11 +1,12 @@
 import itertools
 
 import pandas as pd
+import scipy.sparse
 from Bio.Alphabet.IUPAC import ExtendedIUPACProtein
 from rdkit.Chem import MolFromInchi, AllChem
 from sklearn.base import TransformerMixin
 from sqlalchemy import text
-from scipy.sparse import hstack as sparse_hstack
+from idg_dream.utils import update_sparse_data_from_list, update_sparse_data_from_dict
 
 
 class SequenceLoader(TransformerMixin):
@@ -116,15 +117,26 @@ class ECFPEncoder(TransformerMixin):
 
 
 class SparseJoin(TransformerMixin):
-    def __init__(self, protein_colname, compound_colname):
+    def __init__(self, protein_colname, compound_colname, protein_dim, compound_dim):
         self.protein_colname = protein_colname
         self.compound_colname = compound_colname
+        self.protein_dim = protein_dim
+        self.compound_dim = compound_dim
 
     def fit(self, X, y=None):
         return self
 
     def transform(self, X):
-        return sparse_hstack((X[self.compound_colname].values, X[self.protein_colname].values))
+        p_data, p_row_indexes, p_col_indexes = [], [], []
+        c_data, c_row_indexes, c_col_indexes = [], [], []
+        n = len(X)
+        for index, row in enumerate(X[[self.compound_colname, self.protein_colname]].itertuples()):
+            update_sparse_data_from_dict(p_data, p_row_indexes, p_col_indexes, row.kmers_encoding, index)
+            update_sparse_data_from_list(c_data, c_row_indexes, c_col_indexes, row.ecfp_encoding, index)
+
+        protein_sparse = scipy.sparse.csr_matrix((p_data, (p_row_indexes, p_col_indexes)), shape=(n, self.protein_dim))
+        compound_sparse = scipy.sparse.csr_matrix((c_data, (c_row_indexes, c_col_indexes)), shape=(n, self.compound_dim))
+        return scipy.sparse.hstack((compound_sparse, protein_sparse))
 
 
 class DfToDict(TransformerMixin):

@@ -1,7 +1,6 @@
 import unittest
 import numpy as np
 import pandas as pd
-from sqlalchemy import create_engine
 from idg_dream.settings.test import DB_PORT
 
 from idg_dream.transformers import SequenceLoader, ColumnFilter, InchiLoader, ProteinEncoder, ECFPEncoder, SparseJoin
@@ -131,28 +130,41 @@ class TestProteinEncoder(unittest.TestCase):
                          columns=['sequence', 'kmers_encoding'])
         )
 
-    class TestECFPEncoder(unittest.TestCase):
-        transformer = ECFPEncoder(radius=4)
 
-        def test_transform(self):
-            X = pd.DataFrame([["InChI=1S/CO2/c2-1-3"],
-                              ["InChI=1S/C10H10O4/c1-14-9-6-7(2-4-8(9)11)3-5-10(12)13/h2-6,11H,1H3,(H,12,13)/b5-3+"]],
-                             columns=['standard_inchi'])
-            X_transformed = self.transformer.transform(X)
-            pd.testing.assert_frame_equal(
-                X_transformed,
-                pd.DataFrame([["InChI=1S/CO2/c2-1-3", [633848, 899457, 899746, 916106]],
-                              ["InChI=1S/C10H10O4/c1-14-9-6-7(2-4-8(9)11)3-5-10(12)13/h2-6,11H,1H3,(H,12,13)/b5-3+",
-                               [1773, 9728, 20034, 57369, 57588, 78979, 88049, 95516,
-                                107971, 123721, 134214, 167638, 204359, 349540,
-                                356383, 378749, 390288, 397092, 431546, 435051,
-                                439248, 459409, 495384, 515018, 528633, 529834,
-                                547430, 614225, 624875, 635687, 647863, 650023,
-                                650051, 654006, 678945, 726962, 830972, 846213,
-                                874176, 911985, 916106, 923641, 942272]]],
-                             columns=['standard_inchi', 'ecfp_encoding']
-                             )
-            )
+class TestECFPEncoder(unittest.TestCase):
+    transformer = ECFPEncoder(radius=4)
 
-    class TestSparseJoin(unittest.TestCase):
-        transformer = SparseJoin(protein_colname="kmers_encoding", compound_colname="ecfp_encoding")
+    def test_transform(self):
+        X = pd.DataFrame([["InChI=1S/CO2/c2-1-3"],
+                          ["InChI=1S/C10H10O4/c1-14-9-6-7(2-4-8(9)11)3-5-10(12)13/h2-6,11H,1H3,(H,12,13)/b5-3+"]],
+                         columns=['standard_inchi'])
+        X_transformed = self.transformer.transform(X)
+        pd.testing.assert_frame_equal(
+            X_transformed,
+            pd.DataFrame([["InChI=1S/CO2/c2-1-3", [633848, 899457, 899746, 916106]],
+                          ["InChI=1S/C10H10O4/c1-14-9-6-7(2-4-8(9)11)3-5-10(12)13/h2-6,11H,1H3,(H,12,13)/b5-3+",
+                           [1773, 9728, 20034, 57369, 57588, 78979, 88049, 95516,
+                            107971, 123721, 134214, 167638, 204359, 349540,
+                            356383, 378749, 390288, 397092, 431546, 435051,
+                            439248, 459409, 495384, 515018, 528633, 529834,
+                            547430, 614225, 624875, 635687, 647863, 650023,
+                            650051, 654006, 678945, 726962, 830972, 846213,
+                            874176, 911985, 916106, 923641, 942272]]],
+                         columns=['standard_inchi', 'ecfp_encoding']
+                         )
+        )
+
+
+class TestSparseJoin(unittest.TestCase):
+    transformer = SparseJoin(protein_colname="kmers_encoding", compound_colname="ecfp_encoding", protein_dim=5,
+                             compound_dim=4)
+
+    def test_transform(self):
+        X = pd.DataFrame([[[1, 3, 2], {2: 1, 3: 2}],
+                          [[0, 2], {0: 3, 1: 1}]], columns=["ecfp_encoding", "kmers_encoding"])
+        Xt = self.transformer.transform(X)
+        np.testing.assert_equal(
+            Xt.todense(),
+            np.array([[0, 1, 1, 1, 0, 0, 1, 2, 0],
+                      [1, 0, 1, 0, 3, 1, 0, 0, 0]])
+        )

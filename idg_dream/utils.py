@@ -32,10 +32,25 @@ def load_from_db(engine):
     return X, y
 
 
+def update_sparse_data_from_dict(data, row_indexes, col_indexes, dictionary, index):
+    row_indexes.extend([index] * len(dictionary))
+    temp_col_indexes, values = zip(*dictionary.items())
+    col_indexes.extend(temp_col_indexes)
+    data.extend(values)
+
+
+def update_sparse_data_from_list(data, row_indexes, col_indexes, liste, index):
+    n = len(liste)
+    row_indexes.extend([index] * n)
+    col_indexes.extend(liste)
+    data.extend([1] * n)
+
+
 def collate_to_sparse_tensors(batch, protein_input_size=26 ** 3, compound_input_size=1024, device=torch.device("cpu")):
     proteins_indexes = [[], []]
     proteins_values = []
     compounds_indexes = [[], []]
+    compounds_values = []
     y = []
     n_samples = len(batch)
 
@@ -43,17 +58,13 @@ def collate_to_sparse_tensors(batch, protein_input_size=26 ** 3, compound_input_
         temp_proteins_indexes = sample[0]["protein_input"]
         temp_compounds_indexes = sample[0]["compound_input"]
         # Protein extraction
-        proteins_indexes[0].extend([i] * len(temp_proteins_indexes))
-        prot_col_indexes, values = zip(*temp_proteins_indexes.items())
-        proteins_indexes[1].extend(prot_col_indexes)
-        proteins_values.extend(values)
+        update_sparse_data_from_dict(proteins_values, proteins_indexes[0], proteins_indexes[1], temp_proteins_indexes,
+                                     i)
         # Compound extraction
-        compounds_indexes[0].extend([i] * len(temp_compounds_indexes))
-        compounds_indexes[1].extend(temp_compounds_indexes)
-
+        update_sparse_data_from_list(compounds_values, compounds_indexes[0], compounds_indexes[1],
+                                     temp_compounds_indexes, i)
+        # target extraction
         y.append(sample[1].tolist())
-
-    compounds_values = [1] * len(compounds_indexes[0])
 
     protein_input = torch.sparse.FloatTensor(torch.LongTensor(proteins_indexes),
                                              torch.FloatTensor(proteins_values),
@@ -63,4 +74,7 @@ def collate_to_sparse_tensors(batch, protein_input_size=26 ** 3, compound_input_
                                               torch.FloatTensor(compounds_values),
                                               torch.Size([n_samples, compound_input_size])).to(device)
 
-    return ({"protein_input": protein_input, "compound_input": compound_input}, torch.FloatTensor(y).to(device))
+    return (
+        {"protein_input": protein_input, "compound_input": compound_input},
+        torch.FloatTensor(y).to(device)
+    )
