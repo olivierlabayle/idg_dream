@@ -54,5 +54,5 @@ class TestLogisticReactionPipeline(unittest.TestCase):
         self.pipeline.fit(X, y)
         y_pred = self.pipeline.predict(X)
         mse = mean_squared_error(y, y_pred)
-        self.assertEqual(mse, 6.806603049901049e-24)
-        np.testing.assert_allclose(self.pipeline._final_estimator.intercept_, np.array([7.05959264e-06]))
+        self.assertEqual(mse, 7.448570001894026e-14)
+        np.testing.assert_allclose(self.pipeline._final_estimator.intercept_, np.array([7.069288e-06]))

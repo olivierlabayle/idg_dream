@@ -1,7 +1,7 @@
 import torch
 from sklearn.pipeline import Pipeline
 from skorch.regressor import NeuralNetRegressor
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Ridge
 from idg_dream.models import Baseline
 from idg_dream.transformers import InchiLoader, SequenceLoader, ProteinEncoder, ECFPEncoder, DfToDict, SparseJoin
 from functools import partial
@@ -59,7 +59,7 @@ def baseline(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding_dim
     )
 
 
-def linear_regression(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_dim=2 ** 10):
+def linear_regression(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_dim=2 ** 10, alpha=0):
     protein_encoder = ProteinEncoder(kmer_size=kmer_size)
     num_kmers = len(protein_encoder.kmers_mapping)
     steps = [('encode_proteins', protein_encoder),
@@ -67,6 +67,6 @@ def linear_regression(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_di
              ('sparse_join',
               SparseJoin(protein_colname='kmers_encoding', compound_colname='ecfp_encoding', protein_dim=num_kmers,
                          compound_dim=ecfp_dim)),
-             ('linear_regression', LinearRegression())]
+             ('linear_regression', Ridge(alpha=alpha))]
     steps = add_loader(loaders, steps, engine)
     return Pipeline(steps=steps)
