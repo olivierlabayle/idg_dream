@@ -1,6 +1,7 @@
 import pickle
 import pandas as pd
 import torch
+import scipy.sparse
 from sqlalchemy import create_engine
 
 
@@ -8,12 +9,12 @@ def get_engine(db_port, host='127.0.0.1'):
     return create_engine(f'postgresql+pg8000://idg_dream:idg_dream@{host}:{db_port}/idg_dream', echo=False)
 
 
-def save_pipeline(pipeline, path):
+def save_pickle(obj, path):
     with open(path, 'wb') as f:
-        pickle.dump(pipeline, f)
+        pickle.dump(obj, f)
 
 
-def load_pipeline(path):
+def load_pickle(path):
     with open(path, 'rb') as f:
         return pickle.load(f)
 
@@ -44,6 +45,15 @@ def update_sparse_data_from_list(data, row_indexes, col_indexes, liste, index):
     row_indexes.extend([index] * n)
     col_indexes.extend(liste)
     data.extend([1] * n)
+
+
+def to_sparse(X, update_method, dim):
+    data, row_indexes, col_indexes = [], [], []
+    n = len(X)
+    for index, item in enumerate(X):
+        update_method(data, row_indexes, col_indexes, item, index)
+
+    return scipy.sparse.csr_matrix((data, (row_indexes, col_indexes)), shape=(n, dim))
 
 
 def collate_to_sparse_tensors(batch, protein_input_size=26 ** 3, compound_input_size=1024, device=torch.device("cpu")):

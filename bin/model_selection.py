@@ -4,13 +4,13 @@
 Evaluates two pipelines pipelines on the same cross validation set with the given parameters grid
 
 Usage:
-  train.py PIPELINE_NAME_1 [--training-sample=T] [--db-port=P] [--config-path=C]
+  model_selection.py PIPELINE_NAME CONFIG_PATH SAVE_PATH [--random-state=R] [--training-sample=T] [--db-port=P]
 
 Options:
   -h --help              Show this screen.
+  --random-state=R       The random state associated with the evaluation [default: 0]
   --db-port=P            Port on which idg-dream database is listening [default: 5432]
   --training-sample=T    Path to a training sample, if provided, the pipeline will be trained against that sample.
-  --config-path=C        Json file containing the pipeline's configuration
 """
 
 import os
@@ -18,22 +18,25 @@ import sys
 import docopt
 import idg_dream.pipelines as idg_dream_pipelines
 from importlib import import_module
-from idg_dream.utils import get_engine, save_pipeline, load_from_csv, load_from_db
+from idg_dream.utils import get_engine, save_pickle, load_from_csv, load_from_db
 from sklearn.model_selection import KFold, GridSearchCV
-from sklearn.metrics import mean_squared_error
 
 
-def main(pipeline_name, db_port=5432, config_path=None, training_sample_path=None):
+def main(pipeline_name, config_path, save_path, random_state=0, db_port=5432, training_sample_path=None):
     engine = None
     if not training_sample_path:
         engine = get_engine(db_port)
 
+    pipeline = getattr(idg_dream_pipelines, pipeline_name)(engine=engine)
 
-    pipeline = getattr(idg_dream_pipelines, pipeline_name)(**config_dict)
+    cv = KFold(shuffle=True, random_state=random_state)
 
-    cv = KFold(shuffle=True, random_state=0)
+    module_path, module_name = os.path.split(config_path)
+    sys.path.append(module_path)
+    config_module = import_module(os.path.splitext(module_name)[0])
+    param_grid = config_module.GRIDS[pipeline_name]
 
-    grid_search = GridSearchCV(pipeline, param_grid=param_grid, scoring=mean_squared_error, cv=cv)
+    grid_search = GridSearchCV(pipeline, param_grid=param_grid, scoring='neg_mean_absolute_error', cv=cv)
 
     if training_sample_path:
         X, y = load_from_csv(training_sample_path)
@@ -42,10 +45,13 @@ def main(pipeline_name, db_port=5432, config_path=None, training_sample_path=Non
 
     grid_search.fit(X, y)
 
+    save_pickle(grid_search, save_path)
+    print("End of cross validation.")
+
 
 if __name__ == '__main__':
     args = docopt.docopt(__doc__)
-    main(args['PIPELINE_NAME_1'],
+    main(args['PIPELINE_NAME'], args["CONFIG_PATH"], args['SAVE_PATH'],
+         random_state=int(args['--random-state']),
          db_port=args['--db-port'],
-         config_path=args['--config-path'],
-         training_sample_path=args['--training-sample-path'])
+         training_sample_path=args['--training-sample'])

@@ -1,9 +1,9 @@
 import torch
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline, FeatureUnion
 from skorch.regressor import NeuralNetRegressor
 from sklearn.linear_model import Ridge
 from idg_dream.models import Baseline
-from idg_dream.transformers import InchiLoader, SequenceLoader, ProteinEncoder, ECFPEncoder, DfToDict, SparseJoin
+from idg_dream.transformers import InchiLoader, SequenceLoader, ProteinEncoder, ECFPEncoder, DfToDict
 from functools import partial
 
 from idg_dream.utils import collate_to_sparse_tensors
@@ -12,7 +12,7 @@ from idg_dream.utils import collate_to_sparse_tensors
 def add_loader(cond, steps, engine):
     if cond is True:
         return [('load_inchis', InchiLoader(engine)),
-                 ('load_sequences', SequenceLoader(engine))] + steps
+                ('load_sequences', SequenceLoader(engine))] + steps
     return steps
 
 
@@ -60,13 +60,11 @@ def baseline(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding_dim
 
 
 def linear_regression(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_dim=2 ** 10, alpha=0):
-    protein_encoder = ProteinEncoder(kmer_size=kmer_size)
-    num_kmers = len(protein_encoder.kmers_mapping)
-    steps = [('encode_proteins', protein_encoder),
-             ('encode_ecfp', ECFPEncoder(radius=radius, dim=ecfp_dim)),
-             ('sparse_join',
-              SparseJoin(protein_colname='kmers_encoding', compound_colname='ecfp_encoding', protein_dim=num_kmers,
-                         compound_dim=ecfp_dim)),
-             ('linear_regression', Ridge(alpha=alpha))]
+    steps = [
+        ('sparse_encoding', FeatureUnion([
+            ('encode_proteins', ProteinEncoder(kmer_size=kmer_size, sparse_output=True)),
+            ('encode_ecfp', ECFPEncoder(radius=radius, dim=ecfp_dim, sparse_output=True))
+        ])),
+        ('linear_regression', Ridge(alpha=alpha))]
     steps = add_loader(loaders, steps, engine)
     return Pipeline(steps=steps)

@@ -18,7 +18,7 @@ import sys
 import docopt
 import idg_dream.pipelines as idg_dream_pipelines
 from importlib import import_module
-from idg_dream.utils import get_engine, save_pipeline, load_from_csv, load_from_db
+from idg_dream.utils import get_engine, save_pickle, load_from_csv, load_from_db
 
 
 def main(pipeline_name, path_out, db_port, config_path, training_sample_path):
@@ -35,7 +35,6 @@ def main(pipeline_name, path_out, db_port, config_path, training_sample_path):
 
     pipeline = getattr(idg_dream_pipelines, pipeline_name)(
         **config_dict
-
     )
 
     if training_sample_path:
@@ -45,7 +44,7 @@ def main(pipeline_name, path_out, db_port, config_path, training_sample_path):
 
     pipeline.fit(X, y)
 
-    save_pipeline(pipeline, path_out)
+    save_pickle(pipeline, path_out)
 
 
 if __name__ == '__main__':

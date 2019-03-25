@@ -12,5 +12,12 @@ GRIDS = {
             "train_split": None
         }
     ],
-    "linear_regression": [{""}]
+    "linear_regression": [
+        {
+            "linear_regression__alpha": [1e-3, 1e-1, 1, 10, 100],
+            "encode_proteins__kmer_size": [3],
+            "encode_ecfp__radius": [2],
+            "encode_ecfp__dim": [2 ** 10]
+        }
+    ]
 }

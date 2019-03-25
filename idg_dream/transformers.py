@@ -4,12 +4,12 @@ import pandas as pd
 import scipy.sparse
 from Bio.Alphabet.IUPAC import ExtendedIUPACProtein
 from rdkit.Chem import MolFromInchi, AllChem
-from sklearn.base import TransformerMixin
+from sklearn.base import TransformerMixin, BaseEstimator
 from sqlalchemy import text
-from idg_dream.utils import update_sparse_data_from_list, update_sparse_data_from_dict
+from idg_dream.utils import update_sparse_data_from_list, update_sparse_data_from_dict, to_sparse
 
 
-class SequenceLoader(TransformerMixin):
+class SequenceLoader(TransformerMixin, BaseEstimator):
     def __init__(self, engine):
         self.engine = engine
 
@@ -30,7 +30,7 @@ class SequenceLoader(TransformerMixin):
         return X.merge(sequences, how="left", on="target_id")
 
 
-class InchiLoader(TransformerMixin):
+class InchiLoader(TransformerMixin, BaseEstimator):
     def __init__(self, engine):
         self.engine = engine
 
@@ -51,34 +51,20 @@ class InchiLoader(TransformerMixin):
         return X.merge(inchis, how="left", on="standard_inchi_key")
 
 
-class ColumnFilter(TransformerMixin):
-    def __init__(self, colnames):
-        self.colnames = colnames
-
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X):
-        return X[self.colnames]
-
-
-class Splitter(TransformerMixin):
-    def __init__(self, compound_column, protein_column):
-        self.compound_column = compound_column
-        self.protein_column = protein_column
-
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X):
-        return X[self.protein_column], X[self.compound_column]
-
-
-class ProteinEncoder(TransformerMixin):
-    def __init__(self, kmer_size):
+class ProteinEncoder(TransformerMixin, BaseEstimator):
+    def __init__(self, kmer_size, sparse_output=False):
         self.kmer_size = kmer_size
+        self.sparse_output = sparse_output
+        self.init_kmers_mapping()
+
+    def init_kmers_mapping(self):
         self.kmers_mapping = dict((''.join(letters), index) for index, letters in
                                   enumerate(itertools.product(ExtendedIUPACProtein.letters, repeat=self.kmer_size)))
+        self.dim = len(self.kmers_mapping)
+
+    def set_params(self, **params):
+        super().set_params()
+        self.init_kmers_mapping()
 
     def _transform(self, sequence):
         n = len(sequence)
@@ -93,13 +79,17 @@ class ProteinEncoder(TransformerMixin):
         return self
 
     def transform(self, X):
-        X['kmers_encoding'] = X['sequence'].apply(self._transform)
-        return X
+        Xt = X.copy()
+        Xt['kmers_encoding'] = Xt['sequence'].apply(self._transform)
+        if self.sparse_output:
+            return to_sparse(Xt['kmers_encoding'], update_sparse_data_from_dict, self.dim)
+        return Xt
 
 
-class ECFPEncoder(TransformerMixin):
-    def __init__(self, radius, dim=2 ** 20):
+class ECFPEncoder(TransformerMixin, BaseEstimator):
+    def __init__(self, radius, dim=2 ** 20, sparse_output=False):
         self.radius = radius
+        self.sparse_output = sparse_output
         self.dim = dim
 
     def _transform(self, inchi):
@@ -112,34 +102,14 @@ class ECFPEncoder(TransformerMixin):
         return self
 
     def transform(self, X):
-        X['ecfp_encoding'] = X['standard_inchi'].apply(self._transform)
-        return X
+        Xt = X.copy()
+        Xt['ecfp_encoding'] = Xt['standard_inchi'].apply(self._transform)
+        if self.sparse_output:
+            return to_sparse(Xt['ecfp_encoding'], update_sparse_data_from_list, self.dim)
+        return Xt
 
 
-class SparseJoin(TransformerMixin):
-    def __init__(self, protein_colname, compound_colname, protein_dim, compound_dim):
-        self.protein_colname = protein_colname
-        self.compound_colname = compound_colname
-        self.protein_dim = protein_dim
-        self.compound_dim = compound_dim
-
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X):
-        p_data, p_row_indexes, p_col_indexes = [], [], []
-        c_data, c_row_indexes, c_col_indexes = [], [], []
-        n = len(X)
-        for index, row in enumerate(X[[self.compound_colname, self.protein_colname]].itertuples()):
-            update_sparse_data_from_dict(p_data, p_row_indexes, p_col_indexes, row.kmers_encoding, index)
-            update_sparse_data_from_list(c_data, c_row_indexes, c_col_indexes, row.ecfp_encoding, index)
-
-        protein_sparse = scipy.sparse.csr_matrix((p_data, (p_row_indexes, p_col_indexes)), shape=(n, self.protein_dim))
-        compound_sparse = scipy.sparse.csr_matrix((c_data, (c_row_indexes, c_col_indexes)), shape=(n, self.compound_dim))
-        return scipy.sparse.hstack((compound_sparse, protein_sparse))
-
-
-class DfToDict(TransformerMixin):
+class DfToDict(TransformerMixin, BaseEstimator):
     def __init__(self, protein_colname, compound_colname):
         self.protein_colname = protein_colname
         self.compound_colname = compound_colname

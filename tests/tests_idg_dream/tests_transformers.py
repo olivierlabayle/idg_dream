@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from idg_dream.settings.test import DB_PORT
 
-from idg_dream.transformers import SequenceLoader, ColumnFilter, InchiLoader, ProteinEncoder, ECFPEncoder, SparseJoin
+from idg_dream.transformers import SequenceLoader, InchiLoader, ProteinEncoder, ECFPEncoder
 from idg_dream.utils import get_engine
 
 
@@ -87,25 +87,6 @@ class TestInchiLoader(unittest.TestCase):
         pd.testing.assert_frame_equal(X_transformed, expected_df)
 
 
-class TestColumnFilter(unittest.TestCase):
-    transformer = ColumnFilter(colnames=['sequence', 'compound_id'])
-
-    @staticmethod
-    def get_X():
-        return pd.DataFrame([["ACGTG", 0, "Q9Y4K4"],
-                             ["GGTGACG", 1, "XRFTG4"]],
-                            columns=["sequence", "compound_id", "uniprot_id"])
-
-    def test_transform(self):
-        X_transformed = self.transformer.transform(self.get_X())
-        pd.testing.assert_frame_equal(
-            X_transformed,
-            pd.DataFrame([['ACGTG', 0],
-                          ['GGTGACG', 1]],
-                         columns=["sequence", "compound_id"])
-        )
-
-
 class TestProteinEncoder(unittest.TestCase):
     transformer = ProteinEncoder(kmer_size=3)
 
@@ -129,6 +110,9 @@ class TestProteinEncoder(unittest.TestCase):
                           ["GGTC", {5: 2, 16: 1, 1: 1}]],
                          columns=['sequence', 'kmers_encoding'])
         )
+
+    def test_transform_with_sparse_output(self):
+        raise AssertionError
 
 
 class TestECFPEncoder(unittest.TestCase):
@@ -154,17 +138,5 @@ class TestECFPEncoder(unittest.TestCase):
                          )
         )
 
-
-class TestSparseJoin(unittest.TestCase):
-    transformer = SparseJoin(protein_colname="kmers_encoding", compound_colname="ecfp_encoding", protein_dim=5,
-                             compound_dim=4)
-
-    def test_transform(self):
-        X = pd.DataFrame([[[1, 3, 2], {2: 1, 3: 2}],
-                          [[0, 2], {0: 3, 1: 1}]], columns=["ecfp_encoding", "kmers_encoding"])
-        Xt = self.transformer.transform(X)
-        np.testing.assert_equal(
-            Xt.todense(),
-            np.array([[0, 1, 1, 1, 0, 0, 1, 2, 0],
-                      [1, 0, 1, 0, 3, 1, 0, 0, 0]])
-        )
+    def test_transform_with_sparse_output(self):
+        raise AssertionError
