@@ -112,16 +112,29 @@ class TestProteinEncoder(unittest.TestCase):
         )
 
     def test_transform_with_sparse_output(self):
-        raise AssertionError
+        X = pd.DataFrame([["ACGTGATAGT"], ["ATCTAGATGGTCTAGTAG"]], columns=['sequence'])
+        transformer = ProteinEncoder(kmer_size=2, sparse_output=True)
+        Xt = transformer.transform(X)
+        expected_nonzeros = (np.array([0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1], dtype=np.int32),
+                             np.array([1, 130, 146, 416, 5, 16, 42, 135, 146, 416, 417], dtype=np.int32))
+        for i, elem in enumerate(Xt.nonzero()):
+            np.testing.assert_array_equal(expected_nonzeros[i], elem)
+        # Duplicates
+        self.assertEqual(Xt[0, 146], 2)
+        self.assertEqual(Xt[1, 16], 2)
+        self.assertEqual(Xt[1, 5], 2)
 
 
 class TestECFPEncoder(unittest.TestCase):
     transformer = ECFPEncoder(radius=4)
 
+    def get_X(self):
+        return pd.DataFrame([["InChI=1S/CO2/c2-1-3"],
+                             ["InChI=1S/C10H10O4/c1-14-9-6-7(2-4-8(9)11)3-5-10(12)13/h2-6,11H,1H3,(H,12,13)/b5-3+"]],
+                            columns=['standard_inchi'])
+
     def test_transform(self):
-        X = pd.DataFrame([["InChI=1S/CO2/c2-1-3"],
-                          ["InChI=1S/C10H10O4/c1-14-9-6-7(2-4-8(9)11)3-5-10(12)13/h2-6,11H,1H3,(H,12,13)/b5-3+"]],
-                         columns=['standard_inchi'])
+        X = self.get_X()
         X_transformed = self.transformer.transform(X)
         pd.testing.assert_frame_equal(
             X_transformed,
@@ -139,4 +152,18 @@ class TestECFPEncoder(unittest.TestCase):
         )
 
     def test_transform_with_sparse_output(self):
-        raise AssertionError
+        X = self.get_X()
+        transformer = ECFPEncoder(radius=4, sparse_output=True)
+        Xt = transformer.transform(X)
+        expected_nonzeros = (np.array([0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                        1, 1, 1], dtype=np.int32),
+                              np.array([633848, 899457, 899746, 916106, 1773, 9728, 20034, 57369,
+                                        57588, 78979, 88049, 95516, 107971, 123721, 134214, 167638,
+                                        204359, 349540, 356383, 378749, 390288, 397092, 431546, 435051,
+                                        439248, 459409, 495384, 515018, 528633, 529834, 547430, 614225,
+                                        624875, 635687, 647863, 650023, 650051, 654006, 678945, 726962,
+                                        830972, 846213, 874176, 911985, 916106, 923641, 942272],
+                                       dtype=np.int32))
+        for i, elem in enumerate(Xt.nonzero()):
+            np.testing.assert_array_equal(expected_nonzeros[i], elem)
