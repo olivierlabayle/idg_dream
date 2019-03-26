@@ -16,8 +16,8 @@ def add_loader(cond, steps, engine):
     return steps
 
 
-def baseline(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding_dim=10, lr=0.1, max_epochs=5,
-             device='cpu', loaders=False, train_split=None):
+def baseline_net(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding_dim=10, lr=0.1, max_epochs=5,
+                 device=None, loaders=False, train_split=None):
     """
     This pipeline is a neural net baseline using sparsed input fingerprints for both the compound (ecfp) and the
     enzyme (k-mers).
@@ -34,6 +34,11 @@ def baseline(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding_dim
     :param train_split: if None, no internal cross validation is made, else a skorch CVSplit object
     :return: sklearn.pipeline.Pipeline
     """
+    if torch.cuda.is_available() and device is not 'cpu':
+        device = "cuda"
+    else:
+        device = "cpu"
+
     protein_encoder = ProteinEncoder(kmer_size=kmer_size)
     num_kmers = len(protein_encoder.kmers_mapping)
     collate_fn = partial(collate_to_sparse_tensors,
@@ -52,7 +57,7 @@ def baseline(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding_dim
     steps = [('encode_proteins', protein_encoder),
              ('encode_ecfp', ECFPEncoder(radius=radius, dim=ecfp_dim)),
              ('to_dict', DfToDict(protein_colname='kmers_encoding', compound_colname='ecfp_encoding')),
-             ('baseline_model', net)]
+             ('baseline_net', net)]
     steps = add_loader(loaders, steps, engine)
     return Pipeline(
         steps=steps
@@ -61,7 +66,7 @@ def baseline(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding_dim
 
 def linear_regression(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_dim=2 ** 10, alpha=0):
     steps = [
-        ('sparse_encoding', FeatureUnion([
+        ('sparse_encoding', FeatureUnion(n_jobs = -1, transformer_list=[
             ('encode_proteins', ProteinEncoder(kmer_size=kmer_size, sparse_output=True)),
             ('encode_ecfp', ECFPEncoder(radius=radius, dim=ecfp_dim, sparse_output=True))
         ])),
