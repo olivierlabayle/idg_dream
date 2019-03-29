@@ -3,6 +3,9 @@ import math
 import torch.nn as nn
 
 
+### Baseline neural net model ###
+
+
 class SparseLinear(nn.Module):
     def __init__(self, in_features, out_features):
         super().__init__()
@@ -50,9 +53,43 @@ class Baseline(nn.Module):
         return self.output_branch(joined)
 
 
-class GraphNetwork(nn.Module):
-    def __init__(self):
-        super().__init__()
+### Graph neural net model ###
 
-    def forward(self):
-        pass
+# copied from DGL
+
+def gcn_message(edges):
+    """
+    This computes a batch of messages called 'msg' using the source node's feature stored in 'x' key
+    :param edges: A batch of edges
+    :return:
+    """
+    return {'msg': edges.src['x']}
+
+
+def gcn_reduce(nodes):
+    """
+    This computes the new 'h' features by summing received 'msg' in each node's mailbox.
+    :param nodes: A batch of nodes
+    :return:
+    """
+    return {'x': torch.sum(nodes.mailbox['msg'], dim=1)}
+
+
+class GCNLayer(nn.Module):
+    def __init__(self, in_feats, out_feats):
+        super(GCNLayer, self).__init__()
+        self.linear = nn.Linear(in_feats, out_feats)
+
+    def forward(self, g):
+        """
+        :param g: a dgl.DGLGraph with associated features
+        :return:
+        """
+        # trigger message passing on all edges
+        g.send(g.edges(), gcn_message)
+        # trigger aggregation at all nodes
+        g.recv(g.nodes(), gcn_reduce)
+        # get the result node features
+        h = g.ndata.pop('x')
+        # perform linear transformation
+        return self.linear(h)

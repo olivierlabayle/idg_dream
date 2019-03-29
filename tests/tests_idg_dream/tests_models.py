@@ -3,7 +3,8 @@ import torch
 from torch import optim
 from torch.nn import MSELoss
 
-from idg_dream.models import Baseline, SparseLinear
+from idg_dream.models import Baseline, SparseLinear, GCNLayer
+from idg_dream.utils import inchi_to_graph
 
 
 def sparse_input():
@@ -77,3 +78,20 @@ class TestSparseLinear(unittest.TestCase):
             expected_output,
             output
         )))
+
+
+class TestGCNLayer(unittest.TestCase):
+    def setUp(self):
+        torch.manual_seed(0)
+        self.model = GCNLayer(10, 4)
+
+    def test_forward(self):
+        graph = inchi_to_graph("InChI=1S/CO2/c2-1-3", max_atomic_number=10)
+        out = self.model(graph)
+        self.assertTrue(torch.allclose(
+            out,
+            torch.tensor([[-0.0395, -0.5909, -0.3447, -0.0130],
+                          [0.0104, -0.0371, 0.3398, -0.4799],
+                          [0.0104, -0.0371, 0.3398, -0.4799]]),
+            atol=1e-4
+        ))

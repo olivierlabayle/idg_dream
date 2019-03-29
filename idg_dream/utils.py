@@ -2,6 +2,8 @@ import pickle
 import pandas as pd
 import torch
 import scipy.sparse
+import dgl
+from rdkit.Chem import MolFromInchi
 from sqlalchemy import create_engine
 
 
@@ -88,3 +90,26 @@ def collate_to_sparse_tensors(batch, protein_input_size=26 ** 3, compound_input_
         {"protein_input": protein_input, "compound_input": compound_input},
         torch.FloatTensor(y).to(device)
     )
+
+
+def inchi_to_graph(inchi, max_atomic_number=118):
+    mol = MolFromInchi(inchi)
+    num_atoms = mol.GetNumAtoms()
+    # DGLGraph creation from rdkit mol object
+    graph = dgl.DGLGraph()
+    graph.add_nodes(num_atoms)
+    for bond in mol.GetBonds():
+        src = bond.GetBeginAtomIdx()
+        dest = bond.GetEndAtomIdx()
+        graph.add_edge(src, dest)
+        # Edges in DGL are directional, to ensure bidirectionality, add reverse edge
+        graph.add_edge(dest, src)
+
+    # One hot encoding for nodes features
+    one_hot_indexes = []
+    for atom_index in range(num_atoms):
+        one_hot_indexes.append([mol.GetAtomWithIdx(atom_index).GetAtomicNum()])
+    graph.ndata['x'] = torch.zeros(num_atoms, max_atomic_number) \
+        .scatter_(1, torch.tensor(one_hot_indexes), 1)
+
+    return graph
