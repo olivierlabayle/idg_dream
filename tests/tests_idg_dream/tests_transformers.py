@@ -207,11 +207,10 @@ class TestInchiToDG(unittest.TestCase):
                                     values=torch.FloatTensor([1, 1, 1]),
                                     size=(3, 118)).to_dense()
         )))
-        ## There should be 3 edges and their reverse representing the 3 bonds with the central
+        ## There should be 2 edges and their reverse representing the 2 bonds with the central
         ## carbon atom
         self.assertTrue(torch.all(torch.eq(
             torch.stack(graph.edges()),
             torch.tensor([[0, 1, 0, 2],
                           [1, 0, 2, 0]])
         )))
-
