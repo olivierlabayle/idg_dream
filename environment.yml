@@ -14,3 +14,4 @@ dependencies:
     - pandas==0.24.1
     - jupyter==1.0.0
     - matplotlib==3.0.3
+    - dgl==0.2

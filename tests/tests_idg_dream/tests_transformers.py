@@ -1,9 +1,10 @@
 import unittest
 import numpy as np
+import torch
 import pandas as pd
 from idg_dream.settings.test import DB_PORT
 
-from idg_dream.transformers import SequenceLoader, InchiLoader, ProteinEncoder, ECFPEncoder
+from idg_dream.transformers import SequenceLoader, InchiLoader, ProteinEncoder, ECFPEncoder, InchiToDG
 from idg_dream.utils import get_engine
 
 
@@ -156,14 +157,61 @@ class TestECFPEncoder(unittest.TestCase):
         transformer = ECFPEncoder(radius=4, sparse_output=True)
         Xt = transformer.transform(X)
         expected_nonzeros = (np.array([0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                        1, 1, 1], dtype=np.int32),
-                              np.array([633848, 899457, 899746, 916106, 1773, 9728, 20034, 57369,
-                                        57588, 78979, 88049, 95516, 107971, 123721, 134214, 167638,
-                                        204359, 349540, 356383, 378749, 390288, 397092, 431546, 435051,
-                                        439248, 459409, 495384, 515018, 528633, 529834, 547430, 614225,
-                                        624875, 635687, 647863, 650023, 650051, 654006, 678945, 726962,
-                                        830972, 846213, 874176, 911985, 916106, 923641, 942272],
-                                       dtype=np.int32))
+                                       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                       1, 1, 1], dtype=np.int32),
+                             np.array([633848, 899457, 899746, 916106, 1773, 9728, 20034, 57369,
+                                       57588, 78979, 88049, 95516, 107971, 123721, 134214, 167638,
+                                       204359, 349540, 356383, 378749, 390288, 397092, 431546, 435051,
+                                       439248, 459409, 495384, 515018, 528633, 529834, 547430, 614225,
+                                       624875, 635687, 647863, 650023, 650051, 654006, 678945, 726962,
+                                       830972, 846213, 874176, 911985, 916106, 923641, 942272],
+                                      dtype=np.int32))
         for i, elem in enumerate(Xt.nonzero()):
             np.testing.assert_array_equal(expected_nonzeros[i], elem)
+
+
+class TestInchiToDG(unittest.TestCase):
+    def setUp(self):
+        self.transformer = InchiToDG()
+
+    def test_transform(self):
+        X = pd.DataFrame([["acetic_acid", "InChI=1/C2H4O2/c1-2(3)4/h1H3,(H,3,4)/f/h3H"],
+                          ["carbon_dioxyde", "InChI=1S/CO2/c2-1-3"]],
+                         columns=["name", "standard_inchi"])
+        Xt = self.transformer.transform(X)
+        # Check acetic acid: CC(=O)O
+        graph = Xt.loc[0, "dg_graph"]
+        ## Nodes 0 and 1 are carbon atoms while 2 and 3 are oxygen atoms
+        self.assertTrue(torch.all(torch.eq(
+            graph.ndata["x"],
+            torch.sparse_coo_tensor(indices=torch.LongTensor([[0, 1, 2, 3],
+                                                              [6, 6, 8, 8]]),
+                                    values=torch.FloatTensor([1, 1, 1, 1]),
+                                    size=(4, 118)).to_dense()
+        )))
+        ## There should be 3 edges and their reverse representing the 3 bonds with the central
+        ## carbon atom
+        self.assertTrue(torch.all(torch.eq(
+            torch.stack(graph.edges()),
+            torch.tensor([[0, 1, 1, 2, 1, 3],
+                          [1, 0, 2, 1, 3, 1]])
+        )))
+
+        # Check carbon dioxyde: C(=O)=O
+        graph = Xt.loc[1, "dg_graph"]
+        ## Nodes 0 is carbon atom while 1 and 2 are oxygen atoms
+        self.assertTrue(torch.all(torch.eq(
+            graph.ndata["x"],
+            torch.sparse_coo_tensor(indices=torch.LongTensor([[0, 1, 2],
+                                                              [6, 8, 8]]),
+                                    values=torch.FloatTensor([1, 1, 1]),
+                                    size=(3, 118)).to_dense()
+        )))
+        ## There should be 3 edges and their reverse representing the 3 bonds with the central
+        ## carbon atom
+        self.assertTrue(torch.all(torch.eq(
+            torch.stack(graph.edges()),
+            torch.tensor([[0, 1, 0, 2],
+                          [1, 0, 2, 0]])
+        )))
+

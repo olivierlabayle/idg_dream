@@ -1,7 +1,8 @@
 import itertools
 
 import pandas as pd
-import scipy.sparse
+import dgl
+import torch
 from Bio.Alphabet.IUPAC import ExtendedIUPACProtein
 from rdkit.Chem import MolFromInchi, AllChem
 from sklearn.base import TransformerMixin, BaseEstimator
@@ -119,3 +120,37 @@ class DfToDict(TransformerMixin, BaseEstimator):
 
     def transform(self, X):
         return {'protein_input': X[self.protein_colname].values, 'compound_input': X[self.compound_colname].values}
+
+
+class InchiToDG(TransformerMixin, BaseEstimator):
+    max_atomic_number = 118
+
+    def fit(self, X, y=None):
+        return self
+
+    def _transform(self, inchi):
+        mol = MolFromInchi(inchi)
+        num_atoms = mol.GetNumAtoms()
+        # DGLGraph creation from rdkit mol object
+        graph = dgl.DGLGraph()
+        graph.add_nodes(num_atoms)
+        for bond in mol.GetBonds():
+            src = bond.GetBeginAtomIdx()
+            dest = bond.GetEndAtomIdx()
+            graph.add_edge(src, dest)
+            # Edges in DGL are directional, to ensure bidirectionality, add reverse edge
+            graph.add_edge(dest, src)
+
+        # One hot encoding for nodes features
+        one_hot_indexes = []
+        for atom_index in range(num_atoms):
+            one_hot_indexes.append([mol.GetAtomWithIdx(atom_index).GetAtomicNum()])
+        graph.ndata['x'] = torch.zeros(num_atoms, self.max_atomic_number) \
+            .scatter_(1, torch.tensor(one_hot_indexes), 1)
+
+        return graph
+
+    def transform(self, X):
+        Xt = X.copy()
+        Xt['dg_graph'] = Xt['standard_inchi'].apply(self._transform)
+        return Xt

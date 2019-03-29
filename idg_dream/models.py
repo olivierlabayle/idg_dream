@@ -49,3 +49,10 @@ class Baseline(nn.Module):
         joined = torch.cat((protein_embedding, compound_embedding), dim=1)
         return self.output_branch(joined)
 
+
+class GraphNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self):
+        pass
