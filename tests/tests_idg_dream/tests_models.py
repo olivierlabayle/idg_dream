@@ -3,7 +3,7 @@ import torch
 from torch import optim
 from torch.nn import MSELoss
 
-from idg_dream.models import Baseline, SparseLinear, GCNLayer
+from idg_dream.models import Baseline, SparseLinear, GCNLayer, SiameseLSTMFingerprint
 from idg_dream.utils import inchi_to_graph
 
 
@@ -78,6 +78,23 @@ class TestSparseLinear(unittest.TestCase):
             expected_output,
             output
         )))
+
+
+class TestSiameseLSTMFingerprint(unittest.TestCase):
+    def setUp(self):
+        torch.manual_seed(0)
+        self.model = SiameseLSTMFingerprint(num_kmers=7, num_fingerprints=4, embedding_dim=10, hidden_size=5)
+
+    def get_inputs(self):
+        protein_input = torch.tensor([[3, 4, 1, 2, 5, 0],
+                                      [2, 0, 0, 6, 6, 6]])
+        protein_lengths = torch.LongTensor([5, 3])
+        compound_input = sparse_input()
+        return protein_input, compound_input, protein_lengths
+
+    def test_forward(self):
+        out = self.model(*self.get_inputs())
+        print(out)
 
 
 class TestGCNLayer(unittest.TestCase):

@@ -59,19 +59,44 @@ class SiameseLSTMFingerprint(nn.Module):
         self.num_kmers = num_kmers
         self.num_fingerprints = num_fingerprints
         self.embedding_dim = embedding_dim
+        self.hidden_size = hidden_size
+        # Protein branch layers
         self.protein_embedding = nn.Embedding(num_kmers, embedding_dim)
+        self.lstm_states = (None, None)
         self.protein_lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_size, bidirectional=True)
+        # For now, the mlp will only have one layer
+        self.protein_mlp = nn.Sequential(nn.Linear(hidden_size * 2, embedding_dim), nn.ReLU())
+        # Compound branch layers
         self.compound_branch = nn.Sequential(SparseLinear(num_fingerprints, self.embedding_dim), nn.ReLU())
+        # Out layers
+        self.output_branch = nn.Sequential(
+            nn.Linear(2 * self.embedding_dim, self.embedding_dim),
+            nn.ReLU(),
+            nn.Linear(self.embedding_dim, 1)
+        )
 
-    def protein_branch(self, protein_input):
+    def init_lstm_state(self, batch_size):
+        return torch.randn(2, batch_size, self.hidden_size), torch.randn(2, batch_size, self.hidden_size)
+
+    def protein_branch(self, protein_input, protein_lengths):
         # First let's embed the input
         protein_embedding = self.protein_embedding(protein_input)
         # In order to use mini-batch computations we will use pytorch pack_apdded_sequence
-        X = nn.utils.rnn.pack_padded_sequence(protein_embedding, X_lengths, batch_first=True)
+        packed_proteins = nn.utils.rnn.pack_padded_sequence(protein_embedding, protein_lengths, batch_first=True)
+        lstm_state = self.init_lstm_state(batch_size=protein_lengths.shape[0])
+        # Let's go through LSTM layer
+        proteins_features, lstm_state = self.protein_lstm(packed_proteins, lstm_state)
+        # Undo the packing
+        proteins_features, _ = nn.utils.rnn.pad_packed_sequence(proteins_features, batch_first=True)
+        # The hidden state is then fed into a MLP before joining with the compound's features
+        return self.protein_mlp(proteins_features[:, -1, :])
 
-    def forward(self, protein_input, compound_input):
+    def forward(self, protein_input, compound_input, protein_lengths):
         compound_embedding = self.compound_branch(compound_input)
-        protein_embedding = self.protein_branch(protein_input)
+        protein_embedding = self.protein_branch(protein_input, protein_lengths)
+        joined = torch.cat((protein_embedding, compound_embedding), dim=1)
+        return self.output_branch(joined)
+
 
 ### Graph neural net model ###
 # copied from DGL
