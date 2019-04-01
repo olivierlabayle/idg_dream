@@ -98,7 +98,7 @@ class TestProteinEncoder(unittest.TestCase):
             X_transformed,
             pd.DataFrame([["ACGTGATAGT", {31: 1, 10946: 1, 10821: 1}],
                           ["ATCTAGATGGTCTAGTAG", {417: 1, 10821: 3, 421: 1, 3797: 1}]],
-                         columns=['sequence', 'kmers_encoding'])
+                         columns=['sequence', 'kmers_counts'])
         )
 
     def test_transform_k_equal_1(self):
@@ -109,7 +109,7 @@ class TestProteinEncoder(unittest.TestCase):
             X_transformed,
             pd.DataFrame([["ACG", {0: 1, 1: 1, 5: 1}],
                           ["GGTC", {5: 2, 16: 1, 1: 1}]],
-                         columns=['sequence', 'kmers_encoding'])
+                         columns=['sequence', 'kmers_counts'])
         )
 
     def test_transform_with_sparse_output(self):
@@ -236,6 +236,10 @@ class TestKmersEncoder(unittest.TestCase):
                  list([3551, 10196, 11570, 2504, 8593, 1417, 10835, 509, 13352, 17576, 17576, 17576, 17576, 17576,
                        17576, 17576, 17576])], name='kmers_encoding')
         )
+        pd.testing.assert_series_equal(
+            Xt['encoding_len'],
+            pd.Series([17, 3, 9], name='encoding_len')
+        )
 
     def test_transform_with_k_equal_1_no_padding(self):
         transformer = KmerEncoder(kmer_size=1, pad=False)
@@ -248,4 +252,8 @@ class TestKmersEncoder(unittest.TestCase):
              list([14, 15, 15, 3, 9, 18, 7, 7, 8, 15]),
              list( [5, 6, 15, 15, 2, 4, 17, 3, 0, 3, 18, 8, 12, 18, 13, 2, 2, 13, 16, 0, 19, 0, 19, 15, 19, 19, 14])],
             name='kmers_encoding')
+        )
+        pd.testing.assert_series_equal(
+            Xt['encoding_len'],
+            pd.Series([53, 10, 27], name='encoding_len')
         )

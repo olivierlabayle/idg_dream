@@ -101,16 +101,17 @@ class KmerEncoder(TransformerMixin, BaseEstimator):
         last_amino_acid_index = n - n % self.kmer_size
         kmers_ids = [self.kmers_mapping[sequence[i:i + self.kmer_size]] for i in
                      range(0, last_amino_acid_index, self.kmer_size)]
+        encoding_len = len(kmers_ids)
         if max_length is not None:
-            kmers_ids += [self.dim] * (max_length - len(kmers_ids))
-        return kmers_ids
+            kmers_ids += [self.dim] * (max_length - encoding_len)
+        return pd.Series({'kmers_encoding': kmers_ids, 'encoding_len': encoding_len})
 
     def transform(self, X):
         Xt = X.copy()
         max_length = None
         if self.pad:
             max_length = Xt["sequence"].str.len().max() // self.kmer_size
-        Xt['kmers_encoding'] = Xt['sequence'].apply(self._transform, args=(max_length,))
+        Xt[['kmers_encoding', 'encoding_len']] = Xt['sequence'].apply(self._transform, args=(max_length,))
         return Xt
 
 

@@ -59,11 +59,15 @@ class SiameseLSTMFingerprint(nn.Module):
         self.num_kmers = num_kmers
         self.num_fingerprints = num_fingerprints
         self.embedding_dim = embedding_dim
+        self.protein_embedding = nn.Embedding(num_kmers, embedding_dim)
         self.protein_lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_size, bidirectional=True)
         self.compound_branch = nn.Sequential(SparseLinear(num_fingerprints, self.embedding_dim), nn.ReLU())
 
-    def protein_branch(self):
-        pass
+    def protein_branch(self, protein_input):
+        # First let's embed the input
+        protein_embedding = self.protein_embedding(protein_input)
+        # In order to use mini-batch computations we will use pytorch pack_apdded_sequence
+        X = nn.utils.rnn.pack_padded_sequence(protein_embedding, X_lengths, batch_first=True)
 
     def forward(self, protein_input, compound_input):
         compound_embedding = self.compound_branch(compound_input)
