@@ -4,7 +4,7 @@ import torch
 import pandas as pd
 from idg_dream.settings.test import DB_PORT
 
-from idg_dream.transformers import SequenceLoader, InchiLoader, ProteinEncoder, ECFPEncoder, InchiToDG
+from idg_dream.transformers import SequenceLoader, InchiLoader, KmersCounter, ECFPEncoder, InchiToDG, KmerEncoder
 from idg_dream.utils import get_engine
 
 
@@ -89,7 +89,7 @@ class TestInchiLoader(unittest.TestCase):
 
 
 class TestProteinEncoder(unittest.TestCase):
-    transformer = ProteinEncoder(kmer_size=3)
+    transformer = KmersCounter(kmer_size=3)
 
     def test_transform(self):
         X = pd.DataFrame([["ACGTGATAGT"], ["ATCTAGATGGTCTAGTAG"]], columns=['sequence'])
@@ -102,7 +102,7 @@ class TestProteinEncoder(unittest.TestCase):
         )
 
     def test_transform_k_equal_1(self):
-        transformer = ProteinEncoder(kmer_size=1)
+        transformer = KmersCounter(kmer_size=1)
         X = pd.DataFrame([["ACG"], ["GGTC"]], columns=['sequence'])
         X_transformed = transformer.transform(X)
         pd.testing.assert_frame_equal(
@@ -114,7 +114,7 @@ class TestProteinEncoder(unittest.TestCase):
 
     def test_transform_with_sparse_output(self):
         X = pd.DataFrame([["ACGTGATAGT"], ["ATCTAGATGGTCTAGTAG"]], columns=['sequence'])
-        transformer = ProteinEncoder(kmer_size=2, sparse_output=True)
+        transformer = KmersCounter(kmer_size=2, sparse_output=True)
         Xt = transformer.transform(X)
         expected_nonzeros = (np.array([0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1], dtype=np.int32),
                              np.array([1, 130, 146, 416, 5, 16, 42, 135, 146, 416, 417], dtype=np.int32))
@@ -214,3 +214,38 @@ class TestInchiToDG(unittest.TestCase):
             torch.tensor([[0, 1, 0, 2],
                           [1, 0, 2, 0]])
         )))
+
+
+class TestKmersEncoder(unittest.TestCase):
+    transformer = KmerEncoder(kmer_size=3, pad=True)
+
+    def get_X(self):
+        return pd.DataFrame([["NNPWGHWFECDTETVKWYDACVTESWLVQNHWRAGVKEAHQECKMWMVSIWIK"],
+                             ["RSSELWIIKS"],
+                             ["GHSSDFVEAEWKPWQDDQTAYAYSYYR"]], columns=["sequence"])
+
+    def test_transform_with_k_equal_3_and_padding(self):
+        Xt = self.transformer.transform(self.get_X())
+        pd.testing.assert_series_equal(
+            Xt['kmers_encoding'],
+            pd.Series(
+                [list([7734, 12304, 12275, 744, 2461, 5895, 1353, 11911, 10617, 11841, 4538, 147, 5486, 4397,
+                       894, 12445, 10340]),
+                 list([9869, 2280, 4922, 17576, 17576, 17576, 17576, 17576, 17576, 17576, 17576, 17576, 17576,
+                       17576, 17576, 17576, 17576]),
+                 list([3551, 10196, 11570, 2504, 8593, 1417, 10835, 509, 13352, 17576, 17576, 17576, 17576, 17576,
+                       17576, 17576, 17576])], name='kmers_encoding')
+        )
+
+    def test_transform_with_k_equal_1_no_padding(self):
+        transformer = KmerEncoder(kmer_size=1, pad=False)
+        Xt = transformer.transform(self.get_X())
+        pd.testing.assert_series_equal(
+            Xt['kmers_encoding'],
+            pd.Series([
+                list([11, 11, 12, 18, 5, 6, 18, 4, 3, 1, 2, 16, 3, 16, 17, 8, 18, 19, 2, 0, 1, 17, 16, 3, 15, 18, 9,
+                      17, 13, 11, 6, 18, 14, 0, 5, 17, 8, 3, 0, 6, 13, 3, 1, 8, 10, 18, 10, 17, 15, 7, 18, 7, 8]),
+             list([14, 15, 15, 3, 9, 18, 7, 7, 8, 15]),
+             list( [5, 6, 15, 15, 2, 4, 17, 3, 0, 3, 18, 8, 12, 18, 13, 2, 2, 13, 16, 0, 19, 0, 19, 15, 19, 19, 14])],
+            name='kmers_encoding')
+        )

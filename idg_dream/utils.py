@@ -2,7 +2,9 @@ import pickle
 import pandas as pd
 import torch
 import scipy.sparse
+import itertools
 import dgl
+from Bio.Alphabet.IUPAC import ExtendedIUPACProtein
 from rdkit.Chem import MolFromInchi
 from sqlalchemy import create_engine
 
@@ -113,3 +115,8 @@ def inchi_to_graph(inchi, max_atomic_number=118):
         .scatter_(1, torch.tensor(one_hot_indexes), 1)
 
     return graph
+
+
+def get_kmers_mapping(kmer_size):
+    return dict((''.join(letters), index) for index, letters in
+                enumerate(itertools.product(ExtendedIUPACProtein.letters, repeat=kmer_size)))

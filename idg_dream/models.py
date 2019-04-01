@@ -53,8 +53,23 @@ class Baseline(nn.Module):
         return self.output_branch(joined)
 
 
-### Graph neural net model ###
+class SiameseLSTMFingerprint(nn.Module):
+    def __init__(self, num_kmers, num_fingerprints, embedding_dim, hidden_size):
+        super().__init__()
+        self.num_kmers = num_kmers
+        self.num_fingerprints = num_fingerprints
+        self.embedding_dim = embedding_dim
+        self.protein_lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_size, bidirectional=True)
+        self.compound_branch = nn.Sequential(SparseLinear(num_fingerprints, self.embedding_dim), nn.ReLU())
 
+    def protein_branch(self):
+        pass
+
+    def forward(self, protein_input, compound_input):
+        compound_embedding = self.compound_branch(compound_input)
+        protein_embedding = self.protein_branch(protein_input)
+
+### Graph neural net model ###
 # copied from DGL
 
 def gcn_message(edges):

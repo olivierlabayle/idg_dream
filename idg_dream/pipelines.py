@@ -3,7 +3,7 @@ from sklearn.pipeline import Pipeline, FeatureUnion
 from skorch.regressor import NeuralNetRegressor
 from sklearn.linear_model import Ridge
 from idg_dream.models import Baseline
-from idg_dream.transformers import InchiLoader, SequenceLoader, ProteinEncoder, ECFPEncoder, DfToDict
+from idg_dream.transformers import InchiLoader, SequenceLoader, KmersCounter, ECFPEncoder, DfToDict
 from functools import partial
 
 from idg_dream.utils import collate_to_sparse_tensors
@@ -39,7 +39,7 @@ def baseline_net(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding
     else:
         device = "cpu"
 
-    protein_encoder = ProteinEncoder(kmer_size=kmer_size)
+    protein_encoder = KmersCounter(kmer_size=kmer_size)
     num_kmers = len(protein_encoder.kmers_mapping)
     collate_fn = partial(collate_to_sparse_tensors,
                          protein_input_size=num_kmers, compound_input_size=ecfp_dim, device=torch.device(device))
@@ -56,18 +56,16 @@ def baseline_net(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding
                              )
     steps = [('encode_proteins', protein_encoder),
              ('encode_ecfp', ECFPEncoder(radius=radius, dim=ecfp_dim)),
-             ('to_dict', DfToDict(protein_colname='kmers_encoding', compound_colname='ecfp_encoding')),
+             ('to_dict', DfToDict(protein_colname='kmers_counts', compound_colname='ecfp_encoding')),
              ('baseline_net', net)]
     steps = add_loader(loaders, steps, engine)
-    return Pipeline(
-        steps=steps
-    )
+    return Pipeline(steps=steps)
 
 
 def linear_regression(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_dim=2 ** 10, alpha=0):
     steps = [
         ('sparse_encoding', FeatureUnion(n_jobs = -1, transformer_list=[
-            ('encode_proteins', ProteinEncoder(kmer_size=kmer_size, sparse_output=True)),
+            ('encode_proteins', KmersCounter(kmer_size=kmer_size, sparse_output=True)),
             ('encode_ecfp', ECFPEncoder(radius=radius, dim=ecfp_dim, sparse_output=True))
         ])),
         ('linear_regression', Ridge(alpha=alpha))]

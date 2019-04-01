@@ -1,11 +1,9 @@
-import itertools
-
 import pandas as pd
-from Bio.Alphabet.IUPAC import ExtendedIUPACProtein
 from rdkit.Chem import MolFromInchi, AllChem
 from sklearn.base import TransformerMixin, BaseEstimator
 from sqlalchemy import text
-from idg_dream.utils import update_sparse_data_from_list, update_sparse_data_from_dict, to_sparse, inchi_to_graph
+from idg_dream.utils import update_sparse_data_from_list, update_sparse_data_from_dict, to_sparse, inchi_to_graph, \
+    get_kmers_mapping
 
 
 class SequenceLoader(TransformerMixin, BaseEstimator):
@@ -50,15 +48,14 @@ class InchiLoader(TransformerMixin, BaseEstimator):
         return X.merge(inchis, how="left", on="standard_inchi_key")
 
 
-class ProteinEncoder(TransformerMixin, BaseEstimator):
+class KmersCounter(TransformerMixin, BaseEstimator):
     def __init__(self, kmer_size, sparse_output=False):
         self.kmer_size = kmer_size
         self.sparse_output = sparse_output
         self.init_kmers_mapping()
 
     def init_kmers_mapping(self):
-        self.kmers_mapping = dict((''.join(letters), index) for index, letters in
-                                  enumerate(itertools.product(ExtendedIUPACProtein.letters, repeat=self.kmer_size)))
+        self.kmers_mapping = get_kmers_mapping(self.kmer_size)
         self.dim = len(self.kmers_mapping)
 
     def set_params(self, **params):
@@ -79,9 +76,41 @@ class ProteinEncoder(TransformerMixin, BaseEstimator):
 
     def transform(self, X):
         Xt = X.copy()
-        Xt['kmers_encoding'] = Xt['sequence'].apply(self._transform)
+        Xt['kmers_counts'] = Xt['sequence'].apply(self._transform)
         if self.sparse_output:
-            return to_sparse(Xt['kmers_encoding'], update_sparse_data_from_dict, self.dim)
+            return to_sparse(Xt['kmers_counts'], update_sparse_data_from_dict, self.dim)
+        return Xt
+
+
+class KmerEncoder(TransformerMixin, BaseEstimator):
+    def __init__(self, kmer_size=3, pad=True):
+        self.kmer_size = kmer_size
+        self.pad = pad
+        self.init_kmers_mapping()
+
+    def init_kmers_mapping(self):
+        self.kmers_mapping = get_kmers_mapping(self.kmer_size)
+        self.dim = len(self.kmers_mapping)
+
+    def set_params(self, **params):
+        super().set_params()
+        self.init_kmers_mapping()
+
+    def _transform(self, sequence, max_length):
+        n = len(sequence)
+        last_amino_acid_index = n - n % self.kmer_size
+        kmers_ids = [self.kmers_mapping[sequence[i:i + self.kmer_size]] for i in
+                     range(0, last_amino_acid_index, self.kmer_size)]
+        if max_length is not None:
+            kmers_ids += [self.dim] * (max_length - len(kmers_ids))
+        return kmers_ids
+
+    def transform(self, X):
+        Xt = X.copy()
+        max_length = None
+        if self.pad:
+            max_length = Xt["sequence"].str.len().max() // self.kmer_size
+        Xt['kmers_encoding'] = Xt['sequence'].apply(self._transform, args=(max_length,))
         return Xt
 
 
