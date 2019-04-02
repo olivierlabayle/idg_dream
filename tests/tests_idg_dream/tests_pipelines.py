@@ -56,3 +56,22 @@ class TestLogisticReactionPipeline(unittest.TestCase):
         mse = mean_squared_error(y, y_pred)
         self.assertEqual(mse, 7.448570001894196e-14)
         np.testing.assert_allclose(self.pipeline._final_estimator.intercept_, np.array([7.069288e-06]))
+
+
+class TestBiLSTMFingerprintPepeline(unittest.TestCase):
+    def setUp(self):
+        np.random.seed(0)
+        self.pipeline = pipelines.bilstm_fingerprint()
+        self.training_sample_path = os.path.join("tests", "training_sample_100.csv")
+
+    def test_fit(self):
+        X, y = load_from_csv(self.training_sample_path)
+        self.pipeline.fit(X, y)
+        train_losses = [(h['epoch'], h['train_loss']) for h in self.pipeline._final_estimator.history]
+        self.assertEqual(
+            train_losses,
+            [(1, 0.09648986905813217), (2, 0.03842122480273247), (3, 0.03089130111038685),
+             (4, 0.025661496445536613), (5, 0.021845480427145958), (6, 0.01892860420048237),
+             (7, 0.016651982441544533), (8, 0.014866072684526443), (9, 0.013424623757600784),
+             (10, 0.012224127538502216)]
+        )

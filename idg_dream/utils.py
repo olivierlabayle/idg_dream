@@ -51,12 +51,15 @@ def update_sparse_data_from_list(data, row_indexes, col_indexes, liste, index):
     data.extend([1] * n)
 
 
-def to_sparse(X, update_method, dim):
+def to_sparse(X, update_method, dim, return_torch=False):
     data, row_indexes, col_indexes = [], [], []
     n = len(X)
     for index, item in enumerate(X):
         update_method(data, row_indexes, col_indexes, item, index)
-
+    if return_torch:
+        return torch.sparse.FloatTensor(torch.LongTensor([row_indexes, col_indexes]),
+                                             torch.FloatTensor(data),
+                                             torch.Size([n, dim]))
     return scipy.sparse.csr_matrix((data, (row_indexes, col_indexes)), shape=(n, dim))
 
 

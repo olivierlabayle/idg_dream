@@ -6,7 +6,11 @@ from idg_dream.utils import update_sparse_data_from_list, update_sparse_data_fro
     get_kmers_mapping
 
 
-class SequenceLoader(TransformerMixin, BaseEstimator):
+class NoFitterTransformer(TransformerMixin, BaseEstimator):
+    def fit(self, X, y=None):
+        return self
+
+class SequenceLoader(NoFitterTransformer):
     def __init__(self, engine):
         self.engine = engine
 
@@ -18,16 +22,13 @@ class SequenceLoader(TransformerMixin, BaseEstimator):
                                 (SELECT unnest(ARRAY{uniprot_ids}) AS uniprot_id) query_ids
                                 USING(uniprot_id);""")
 
-    def fit(self, X, y=None):
-        return self
-
     def transform(self, X):
         query = self.build_query(X['target_id'].unique().tolist())
         sequences = pd.read_sql(query, self.engine)
         return X.merge(sequences, how="left", on="target_id")
 
 
-class InchiLoader(TransformerMixin, BaseEstimator):
+class InchiLoader(NoFitterTransformer):
     def __init__(self, engine):
         self.engine = engine
 
@@ -39,16 +40,13 @@ class InchiLoader(TransformerMixin, BaseEstimator):
                                 (SELECT unnest(ARRAY{inchi_keys}) AS standard_inchi_key) query_compounds
                             USING(standard_inchi_key);""")
 
-    def fit(self, X, y=None):
-        return self
-
     def transform(self, X, y=None):
         query = self.build_query(X["standard_inchi_key"].unique().tolist())
         inchis = pd.read_sql(query, self.engine)
         return X.merge(inchis, how="left", on="standard_inchi_key")
 
 
-class KmersCounter(TransformerMixin, BaseEstimator):
+class KmersCounter(NoFitterTransformer):
     def __init__(self, kmer_size, sparse_output=False):
         self.kmer_size = kmer_size
         self.sparse_output = sparse_output
@@ -71,9 +69,6 @@ class KmersCounter(TransformerMixin, BaseEstimator):
             freqs[kmer_id] = freqs.setdefault(kmer_id, 0) + 1
         return freqs
 
-    def fit(self, X, y=None):
-        return self
-
     def transform(self, X):
         Xt = X.copy()
         Xt['kmers_counts'] = Xt['sequence'].apply(self._transform)
@@ -82,7 +77,7 @@ class KmersCounter(TransformerMixin, BaseEstimator):
         return Xt
 
 
-class KmerEncoder(TransformerMixin, BaseEstimator):
+class KmerEncoder(NoFitterTransformer):
     def __init__(self, kmer_size=3, pad=True):
         self.kmer_size = kmer_size
         self.pad = pad
@@ -115,7 +110,7 @@ class KmerEncoder(TransformerMixin, BaseEstimator):
         return Xt
 
 
-class ECFPEncoder(TransformerMixin, BaseEstimator):
+class ECFPEncoder(NoFitterTransformer):
     def __init__(self, radius, dim=2 ** 20, sparse_output=False):
         self.radius = radius
         self.sparse_output = sparse_output
@@ -127,9 +122,6 @@ class ECFPEncoder(TransformerMixin, BaseEstimator):
         AllChem.GetMorganFingerprintAsBitVect(mol, self.radius, self.dim, bitInfo=info)
         return list(info.keys())
 
-    def fit(self, X, y=None):
-        return self
-
     def transform(self, X):
         Xt = X.copy()
         Xt['ecfp_encoding'] = Xt['standard_inchi'].apply(self._transform)
@@ -138,22 +130,16 @@ class ECFPEncoder(TransformerMixin, BaseEstimator):
         return Xt
 
 
-class DfToDict(TransformerMixin, BaseEstimator):
-    def __init__(self, protein_colname, compound_colname):
-        self.protein_colname = protein_colname
-        self.compound_colname = compound_colname
-
-    def fit(self, X, y=None):
-        return self
+class DfToDict(NoFitterTransformer):
+    def __init__(self, columns_mapping):
+        self.columns_mapping = {"protein_input": None, "compound_input": None}
+        self.columns_mapping.update(columns_mapping)
 
     def transform(self, X):
-        return {'protein_input': X[self.protein_colname].values, 'compound_input': X[self.compound_colname].values}
+        return dict((key, X[value].values) for key, value in self.columns_mapping.items())
 
 
-class InchiToDG(TransformerMixin, BaseEstimator):
-    def fit(self, X, y=None):
-        return self
-
+class InchiToDG(NoFitterTransformer):
     def transform(self, X):
         Xt = X.copy()
         Xt['dg_graph'] = Xt['standard_inchi'].apply(inchi_to_graph)
