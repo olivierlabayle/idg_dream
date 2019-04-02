@@ -3,7 +3,7 @@ import torch
 from torch import optim
 from torch.nn import MSELoss
 
-from idg_dream.models import Baseline, SparseLinear, GCNLayer, SiameseLSTMFingerprint
+from idg_dream.models import Baseline, SparseLinear, GCNLayer, SiameseLSTMFingerprint, BiLSTMProteinEmbedder
 from idg_dream.utils import inchi_to_graph
 
 
@@ -80,21 +80,49 @@ class TestSparseLinear(unittest.TestCase):
         )))
 
 
-class TestSiameseLSTMFingerprint(unittest.TestCase):
+class TestBiLSTMProteinEmbedder(unittest.TestCase):
     def setUp(self):
         torch.manual_seed(0)
-        self.model = SiameseLSTMFingerprint(num_kmers=7, num_fingerprints=4, embedding_dim=10, hidden_size=5)
+        self.model = BiLSTMProteinEmbedder(num_kmers=7, embedding_dim=10, hidden_size=5, mlp_sizes=(9,))
 
     def get_inputs(self):
         protein_input = torch.tensor([[3, 4, 1, 2, 5, 0],
                                       [2, 0, 0, 6, 6, 6]])
-        protein_lengths = torch.LongTensor([5, 3])
-        compound_input = sparse_input()
-        return protein_input, compound_input, protein_lengths
+        protein_lengths = torch.LongTensor([6, 3])
+        return protein_input, protein_lengths
 
     def test_forward(self):
         out = self.model(*self.get_inputs())
-        print(out)
+        self.assertTrue(torch.allclose(
+            torch.tensor([[0.0833, 0.0000, 0.1195, 0.0000, 0.2055, 0.2779, 0.0000, 0.0000, 0.4271],
+                [0.0787, 0.0000, 0.1505, 0.0000, 0.1646, 0.2946, 0.0481, 0.0000, 0.3201]]),
+            out,
+            atol=1e-4
+        ))
+
+    def test_backward(self):
+        model = BiLSTMProteinEmbedder(num_kmers=7, embedding_dim=10, hidden_size=5, mlp_sizes=(9, 1))
+        optimizer = optim.SGD(model.parameters(), lr=1)
+        loss_fn = MSELoss()
+        target = torch.FloatTensor([[1e-5],
+                                    [3.6e-4]])
+
+        old_params = [p.clone().detach() for p in model.parameters()]
+
+        out = model(*self.get_inputs())
+        loss = loss_fn(out, target)
+        loss.backward()
+
+        for param in model.parameters():
+            self.assertIsNotNone(param.grad)
+
+        optimizer.step()
+
+        for i, param in enumerate(model.parameters()):
+            self.assertFalse(torch.allclose(
+                param.data,
+                old_params[i]
+            ))
 
 
 class TestGCNLayer(unittest.TestCase):
