@@ -13,6 +13,7 @@ Options:
 """
 
 import docopt
+import numpy as np
 import pandas as pd
 
 from idg_dream.transformers import SequenceLoader, InchiLoader
@@ -66,8 +67,8 @@ def process_data(data, engine):
     data = data.merge(join_condition, on=key, how='inner')
     # Remove outliers measurements
     data = data[(data.standard_value <= 1.7e-3) & (data.standard_value >= 1.e-10)]
-    # Check the number of lines corresponds to the data analysis
-    assert len(data) == 19269
+    # Convert to PK values
+    data['standard_value'] = - np.log10(data['standard_value'])
     # Remove samples for which the protein_id has no sequence
     sequence_loader = SequenceLoader(engine=engine)
     data = sequence_loader.transform(data).dropna(how="any")
@@ -78,8 +79,8 @@ def process_data(data, engine):
     return data[["standard_inchi_key", "target_id", "standard_inchi", "sequence", "standard_value"]]
 
 
-def create_training_set(db_port, db_host,data_path):
-    engine = get_engine(db_port)
+def create_training_set(db_port, db_host, data_path):
+    engine = get_engine(db_port, db_host)
     data = load_training_data(data_path)
     print(f"Processing data.")
     processed_data = process_data(data, engine)
