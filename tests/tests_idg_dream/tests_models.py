@@ -3,7 +3,7 @@ import torch
 from torch import optim
 from torch.nn import MSELoss
 
-from idg_dream.models import Baseline, SparseLinear, GCNLayer, SiameseLSTMFingerprint, BiLSTMProteinEmbedder
+from idg_dream.models import Baseline, SparseLinear, GCNLayer, SiameseBiLSTMFingerprints, BiLSTMProteinEmbedder
 from idg_dream.utils import inchi_to_graph
 
 
