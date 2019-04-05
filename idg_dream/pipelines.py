@@ -92,11 +92,13 @@ def bilstm_fingerprint(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_d
             protein_lengths.append(x['protein_lengths'])
             compound_inputs.append(x['compound_input'])
             targets.append(y)
+
         order = np.argsort(protein_lengths)[::-1]
         protein_lengths = np.array(protein_lengths)[order]
         protein_inputs = np.array(protein_inputs)[order]
         compound_inputs = np.array(compound_inputs)[order]
-        targets = np.array(targets)[order]
+        targets = np.array(targets, dtype=np.float32)[order]
+
         return (
             {
                 "compound_input": to_sparse(compound_inputs, update_sparse_data_from_list, ecfp_dim,
@@ -109,7 +111,7 @@ def bilstm_fingerprint(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_d
 
     kmers_encoder = KmerEncoder(kmer_size=kmer_size, pad=True)
     net = NeuralNetRegressor(module=SiameseBiLSTMFingerprints,
-                             module__num_kmers=kmers_encoder.dim,
+                             module__num_kmers=kmers_encoder.dim + 1,
                              module__num_fingerprints=ecfp_dim,
                              module__embedding_dim=embedding_dim,
                              module__hidden_size=hidden_size,

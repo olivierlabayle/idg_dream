@@ -205,4 +205,5 @@ class SiameseBiLSTMFingerprints(nn.Module):
         compound_embedding = self.compound_branch(compound_input)
         protein_embedding = self.protein_branch(protein_input, protein_lengths)
         joined = torch.cat((protein_embedding, compound_embedding), dim=1)
-        return self.output_branch(joined)
+        out =  self.output_branch(joined)
+        return out

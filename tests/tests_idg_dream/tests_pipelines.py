@@ -61,7 +61,8 @@ class TestLogisticReactionPipeline(unittest.TestCase):
 class TestBiLSTMFingerprintPepeline(unittest.TestCase):
     def setUp(self):
         np.random.seed(0)
-        self.pipeline = pipelines.bilstm_fingerprint()
+        torch.manual_seed(0)
+        self.pipeline = pipelines.bilstm_fingerprint(lr=0.1, max_epochs=5)
         self.training_sample_path = os.path.join("tests", "training_sample_100.csv")
 
     def test_fit(self):
@@ -70,8 +71,9 @@ class TestBiLSTMFingerprintPepeline(unittest.TestCase):
         train_losses = [(h['epoch'], h['train_loss']) for h in self.pipeline._final_estimator.history]
         self.assertEqual(
             train_losses,
-            [(1, 0.09648986905813217), (2, 0.03842122480273247), (3, 0.03089130111038685),
-             (4, 0.025661496445536613), (5, 0.021845480427145958), (6, 0.01892860420048237),
-             (7, 0.016651982441544533), (8, 0.014866072684526443), (9, 0.013424623757600784),
-             (10, 0.012224127538502216)]
+            [(1, 0.0232001431286335),
+             (2, 0.010991827584803104),
+             (3, 0.005418348591774702),
+             (4, 0.0028657959774136543),
+             (5, 0.0016884945798665285)]
         )
