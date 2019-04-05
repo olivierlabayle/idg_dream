@@ -29,14 +29,14 @@ def main(pipeline_name, config_path, save_path, random_state=0, db_port=5432, tr
 
     pipeline = getattr(idg_dream_pipelines, pipeline_name)(engine=engine)
 
-    cv = KFold(shuffle=True, random_state=random_state)
+    cv = KFold(3, shuffle=True, random_state=random_state)
 
     module_path, module_name = os.path.split(config_path)
     sys.path.append(module_path)
     config_module = import_module(os.path.splitext(module_name)[0])
     param_grid = config_module.GRIDS[pipeline_name]
 
-    grid_search = GridSearchCV(pipeline, param_grid=param_grid, scoring='neg_mean_absolute_error', cv=cv)
+    grid_search = GridSearchCV(pipeline, param_grid=param_grid, scoring='neg_mean_absolute_error', cv=cv, refit=False)
 
     if training_sample_path:
         X, y = load_from_csv(training_sample_path)

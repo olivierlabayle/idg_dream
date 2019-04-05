@@ -1,13 +1,15 @@
 import torch
-import numpy as np
 from sklearn.pipeline import Pipeline, FeatureUnion
 from skorch.regressor import NeuralNetRegressor
 from sklearn.linear_model import Ridge
+from torch.optim import SGD
+
 from idg_dream.models import Baseline, SiameseBiLSTMFingerprints
 from idg_dream.transformers import InchiLoader, SequenceLoader, KmersCounter, ECFPEncoder, DfToDict, KmerEncoder
 from functools import partial
 
-from idg_dream.utils import collate_to_sparse_tensors, update_sparse_data_from_list, to_sparse
+from idg_dream.utils import collate_to_sparse_tensors, update_sparse_data_from_list, to_sparse, \
+    collate_bilstm_fingerprint
 
 
 def add_loader(cond, steps, engine):
@@ -18,7 +20,7 @@ def add_loader(cond, steps, engine):
 
 
 def baseline_net(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding_dim=10, lr=0.1, max_epochs=5,
-                 device=None, loaders=False, train_split=None):
+                 device=None, loaders=False, train_split=None, optimizer=SGD):
     """
     This pipeline is a neural net baseline using sparsed input fingerprints for both the compound (ecfp) and the
     enzyme (k-mers).
@@ -50,6 +52,7 @@ def baseline_net(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding
                              module__embedding_dim=embedding_dim,
                              max_epochs=max_epochs,
                              lr=lr,
+                             optimizer=optimizer,
                              device=device,
                              iterator_train__collate_fn=collate_fn,
                              iterator_valid__collate_fn=collate_fn,
@@ -74,41 +77,14 @@ def linear_regression(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_di
     return Pipeline(steps=steps)
 
 
-def bilstm_fingerprint(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_dim=2 ** 10, hidden_size=10,
-                       mlp_sizes=(10,), embedding_dim=10, max_epochs=10, lr=1, device=None, train_split=None):
+def bilstm_fingerprint(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_dim=2 ** 20, hidden_size=10,
+                       mlp_sizes=(10,), embedding_dim=10, max_epochs=10, lr=1, optimizer=SGD, device=None, train_split=None):
     if torch.cuda.is_available() and device is not 'cpu':
         device = "cuda"
     else:
         device = "cpu"
 
-    def collate_fn(batch):
-        """
-        need to sort by length
-        :return:
-        """
-        protein_inputs, protein_lengths, compound_inputs, targets = [], [], [], []
-        for x, y in batch:
-            protein_inputs.append(x['protein_input'])
-            protein_lengths.append(x['protein_lengths'])
-            compound_inputs.append(x['compound_input'])
-            targets.append(y)
-
-        order = np.argsort(protein_lengths)[::-1]
-        protein_lengths = np.array(protein_lengths)[order]
-        protein_inputs = np.array(protein_inputs)[order]
-        compound_inputs = np.array(compound_inputs)[order]
-        targets = np.array(targets, dtype=np.float32)[order]
-
-        return (
-            {
-                "compound_input": to_sparse(compound_inputs, update_sparse_data_from_list, ecfp_dim,
-                                            return_torch=True).to(device),
-                "protein_input": torch.from_numpy(protein_inputs).to(device),
-                "protein_lengths": torch.from_numpy(protein_lengths).to(device)
-            },
-            torch.from_numpy(targets).to(device)
-        )
-
+    collate_fn = partial(collate_bilstm_fingerprint, device=torch.device(device), ecfp_dim=ecfp_dim)
     kmers_encoder = KmerEncoder(kmer_size=kmer_size, pad=True)
     net = NeuralNetRegressor(module=SiameseBiLSTMFingerprints,
                              module__num_kmers=kmers_encoder.dim + 1,
@@ -118,6 +94,7 @@ def bilstm_fingerprint(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_d
                              module__mlp_sizes=mlp_sizes,
                              max_epochs=max_epochs,
                              lr=lr,
+                             optimizer=optimizer,
                              device=device,
                              iterator_train__collate_fn=collate_fn,
                              iterator_valid__collate_fn=collate_fn,

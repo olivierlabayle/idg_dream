@@ -1,9 +1,12 @@
+from torch.optim import SGD, Adam
+
 GRIDS = {
     "baseline_net": [
         {
             "encode_proteins__kmer_size": [3, 5, 7],
             "encode_ecfp__radius": [2, 3],
             "encode_ecfp__dim": [2 ** 10],
+            "baseline_net__module__num_fingerprints": [2**10],
             "baseline_net__module__embedding_dim": [10, 20],
             "baseline_net__optimizer__lr": [0.1, 1],
             "baseline_net__max_epochs": [10, 50],
@@ -16,5 +19,13 @@ GRIDS = {
             "sparse_encoding__encode_ecfp__radius": [2, 3, 4],
             "sparse_encoding__encode_ecfp__dim": [2 ** 10, 2**15, 2**20]
         }
+    ],
+    "bilstm_fingerprint": [
+        {"encode_ecfp__radius": [4],
+         "encode_ecfp__dim": [2**20],
+         "bilstm_fingerprint__module__num_fingerprints": [2**20],
+         "bilstm_fingerprint__optimizer": [Adam],
+         "bilstm_fingerprint__lr": [0.1],
+         "bilstm_fingerprint__max_epochs": [30, 50, 100]}
     ]
 }

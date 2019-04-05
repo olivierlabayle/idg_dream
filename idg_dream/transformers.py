@@ -132,8 +132,7 @@ class ECFPEncoder(NoFitterTransformer):
 
 class DfToDict(NoFitterTransformer):
     def __init__(self, columns_mapping):
-        self.columns_mapping = {"protein_input": None, "compound_input": None}
-        self.columns_mapping.update(columns_mapping)
+        self.columns_mapping = columns_mapping
 
     def transform(self, X):
         return dict((key, X[value].values) for key, value in self.columns_mapping.items())
