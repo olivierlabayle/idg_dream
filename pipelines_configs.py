@@ -9,6 +9,7 @@ CONFIG = {
             "ecfp_dim": 2 ** 20,
             "embedding_dim": 20,
             "lr": 0.1,
+            "weight_decay":0.1,
             "max_epochs": 50,
             "device": None,
             "loaders": False,
@@ -28,6 +29,7 @@ CONFIG = {
             "max_epochs": 10,
             "lr": 1,
             "optimizer": Adam,
+            "weight_decay":0.1,
             "device": None,
             "train_split": CVSplit(3)
         }

@@ -20,7 +20,7 @@ def add_loader(cond, steps, engine):
 
 
 def baseline_net(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding_dim=10, lr=0.1, max_epochs=5,
-                 device=None, loaders=False, train_split=None, optimizer=SGD):
+                 device=None, loaders=False, train_split=None, optimizer=SGD, weight_decay=0):
     """
     This pipeline is a neural net baseline using sparsed input fingerprints for both the compound (ecfp) and the
     enzyme (k-mers).
@@ -53,6 +53,7 @@ def baseline_net(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding
                              max_epochs=max_epochs,
                              lr=lr,
                              optimizer=optimizer,
+                             optimizer__weight_decay=weight_decay,
                              device=device,
                              iterator_train__collate_fn=collate_fn,
                              iterator_valid__collate_fn=collate_fn,
@@ -78,7 +79,8 @@ def linear_regression(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_di
 
 
 def bilstm_fingerprint(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_dim=2 ** 20, hidden_size=10,
-                       mlp_sizes=(10,), embedding_dim=10, max_epochs=10, lr=1, optimizer=SGD, device=None, train_split=None):
+                       mlp_sizes=(10,), embedding_dim=10, max_epochs=10, lr=1, optimizer=SGD, device=None,
+                       train_split=None, weight_decay=0):
     if torch.cuda.is_available() and device is not 'cpu':
         device = "cuda"
     else:
@@ -95,6 +97,7 @@ def bilstm_fingerprint(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_d
                              max_epochs=max_epochs,
                              lr=lr,
                              optimizer=optimizer,
+                             optimizer__weight_decay=weight_decay,
                              device=device,
                              iterator_train__collate_fn=collate_fn,
                              iterator_valid__collate_fn=collate_fn,

@@ -7,6 +7,7 @@ GRIDS = {
             "encode_ecfp__radius": [2, 3],
             "encode_ecfp__dim": [2 ** 10],
             "baseline_net__module__num_fingerprints": [2**10],
+            "baseline_net__optimizer": [Adam],
             "baseline_net__module__embedding_dim": [10, 20],
             "baseline_net__optimizer__lr": [0.1, 1],
             "baseline_net__max_epochs": [10, 50],

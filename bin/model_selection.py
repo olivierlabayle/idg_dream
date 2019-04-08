@@ -16,6 +16,9 @@ Options:
 import os
 import sys
 import docopt
+import torch
+import numpy as np
+
 import idg_dream.pipelines as idg_dream_pipelines
 from importlib import import_module
 from idg_dream.utils import get_engine, save_pickle, load_from_csv, load_from_db
@@ -23,6 +26,9 @@ from sklearn.model_selection import KFold, GridSearchCV
 
 
 def main(pipeline_name, config_path, save_path, random_state=0, db_port=5432, training_sample_path=None):
+    torch.manual_seed(random_state)
+    np.random.seed(random_state)
+
     engine = None
     if not training_sample_path:
         engine = get_engine(db_port)
