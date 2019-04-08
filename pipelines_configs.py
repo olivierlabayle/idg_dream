@@ -5,14 +5,15 @@ CONFIG = {
     "baseline":
         {
             "kmer_size": 3,
-            "radius": 2,
-            "ecfp_dim": 2 ** 10,
-            "embedding_dim": 10,
+            "radius": 4,
+            "ecfp_dim": 2 ** 20,
+            "embedding_dim": 20,
             "lr": 0.1,
-            "max_epochs": 5,
+            "max_epochs": 50,
             "device": None,
             "loaders": False,
-            "train_split": None
+            "optimizer": Adam,
+            "train_split": CVSplit(3)
         },
     "bilstm_fingerprint":
         {
