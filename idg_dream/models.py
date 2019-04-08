@@ -64,6 +64,7 @@ class BiLSTMProteinEmbedder(nn.Module):
         self.num_kmers = num_kmers
         self.embedding_dim = embedding_dim
         self.hidden_size = hidden_size
+        self.dropout = dropout
         self.mlp_sizes = [2 * self.hidden_size] + list(mlp_sizes)
 
         self.protein_embedding = nn.Embedding(num_kmers, embedding_dim)
@@ -186,6 +187,7 @@ class SiameseBiLSTMFingerprints(nn.Module):
         self.embedding_dim = embedding_dim
         self.hidden_size = hidden_size
         self.mlp_sizes = mlp_sizes
+        self.lstm_dropout = lstm_dropout
         # Protein branch layers
         self.protein_branch = BiLSTMProteinEmbedder(num_kmers,
                                                     embedding_dim,
