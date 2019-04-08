@@ -62,5 +62,5 @@ if __name__ == '__main__':
         db_port=args["--db-port"],
         config_path=args["--config-path"],
         training_sample_path=args["--training-sample"],
-        random_state=args["--random-state"]
+        random_state=int(args["--random-state"])
     )
