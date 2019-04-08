@@ -2,7 +2,7 @@ from skorch.dataset import CVSplit
 from torch.optim import *
 
 CONFIG = {
-    "baseline":
+    "baseline_net":
         {
             "kmer_size": 3,
             "radius": 4,
