@@ -27,9 +27,9 @@ CONFIG = {
             "mlp_sizes": (20, 10),
             "embedding_dim": 20,
             "max_epochs": 10,
-            "lr": 1,
+            "lr": 1e-3,
             "optimizer": Adam,
-            "weight_decay":0.1,
+            "weight_decay":1e-3,
             "lstm_dropout":0.2,
             "device": None,
             "train_split": CVSplit(3)
