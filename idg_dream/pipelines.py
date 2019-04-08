@@ -19,8 +19,18 @@ def add_loader(cond, steps, engine):
     return steps
 
 
-def baseline_net(engine=None, kmer_size=3, radius=2, ecfp_dim=2 ** 10, embedding_dim=10, lr=0.1, max_epochs=5,
-                 device=None, loaders=False, train_split=None, optimizer=SGD, weight_decay=0):
+def baseline_net(engine=None,
+                 kmer_size=3,
+                 radius=2,
+                 ecfp_dim=2 ** 10,
+                 embedding_dim=10,
+                 lr=0.1,
+                 max_epochs=5,
+                 device=None,
+                 loaders=False,
+                 train_split=None,
+                 optimizer=SGD,
+                 weight_decay=0):
     """
     This pipeline is a neural net baseline using sparsed input fingerprints for both the compound (ecfp) and the
     enzyme (k-mers).
@@ -78,9 +88,21 @@ def linear_regression(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_di
     return Pipeline(steps=steps)
 
 
-def bilstm_fingerprint(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_dim=2 ** 20, hidden_size=10,
-                       mlp_sizes=(10,), embedding_dim=10, max_epochs=10, lr=1, optimizer=SGD, device=None,
-                       train_split=None, weight_decay=0):
+def bilstm_fingerprint(engine=None,
+                       loaders=False,
+                       kmer_size=3,
+                       radius=2,
+                       ecfp_dim=2 ** 20,
+                       hidden_size=10,
+                       mlp_sizes=(10,),
+                       embedding_dim=10,
+                       max_epochs=10,
+                       lr=1,
+                       optimizer=SGD,
+                       device=None,
+                       train_split=None,
+                       weight_decay=0,
+                       lstm_dropout=0):
     if torch.cuda.is_available() and device is not 'cpu':
         device = "cuda"
     else:
@@ -94,6 +116,7 @@ def bilstm_fingerprint(engine=None, loaders=False, kmer_size=3, radius=2, ecfp_d
                              module__embedding_dim=embedding_dim,
                              module__hidden_size=hidden_size,
                              module__mlp_sizes=mlp_sizes,
+                             module__lstm_dropout=lstm_dropout,
                              max_epochs=max_epochs,
                              lr=lr,
                              optimizer=optimizer,

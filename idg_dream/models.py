@@ -49,7 +49,7 @@ class SparseLinear(nn.Module):
 
 
 class BiLSTMProteinEmbedder(nn.Module):
-    def __init__(self, num_kmers, embedding_dim, hidden_size, mlp_sizes):
+    def __init__(self, num_kmers, embedding_dim, hidden_size, mlp_sizes, dropout=0):
         """
         This is a basic architecture that consists in 3 sequential layers :
             1) An Embedding layer is applied to encode kmers
@@ -67,12 +67,13 @@ class BiLSTMProteinEmbedder(nn.Module):
         self.mlp_sizes = [2 * self.hidden_size] + list(mlp_sizes)
 
         self.protein_embedding = nn.Embedding(num_kmers, embedding_dim)
-        self.protein_lstm = nn.LSTM(input_size=embedding_dim, hidden_size=hidden_size, num_layers=1, batch_first=True,
-                                    bidirectional=True, dropout=0)
+        self.protein_lstm = nn.LSTM(input_size=embedding_dim,
+                                    hidden_size=hidden_size,
+                                    num_layers=1,
+                                    batch_first=True,
+                                    bidirectional=True,
+                                    dropout=dropout)
         self.protein_mlp = get_mlp_from_sizes(self.mlp_sizes)
-
-    def init_lstm_state(self, batch_size):
-        return torch.randn(2, batch_size, self.hidden_size), torch.randn(2, batch_size, self.hidden_size)
 
     def forward(self, proteins_inputs, proteins_lengths):
         """
@@ -167,7 +168,7 @@ class Baseline(nn.Module):
 
 
 class SiameseBiLSTMFingerprints(nn.Module):
-    def __init__(self, num_kmers, num_fingerprints, embedding_dim, hidden_size, mlp_sizes):
+    def __init__(self, num_kmers, num_fingerprints, embedding_dim, hidden_size, mlp_sizes, lstm_dropout=0):
         """
         This model is a siamese model that uses :
             1) The fingerprint and a mlp to represent the compound
@@ -186,7 +187,11 @@ class SiameseBiLSTMFingerprints(nn.Module):
         self.hidden_size = hidden_size
         self.mlp_sizes = mlp_sizes
         # Protein branch layers
-        self.protein_branch = BiLSTMProteinEmbedder(num_kmers, embedding_dim, hidden_size, mlp_sizes)
+        self.protein_branch = BiLSTMProteinEmbedder(num_kmers,
+                                                    embedding_dim,
+                                                    hidden_size,
+                                                    mlp_sizes,
+                                                    dropout=lstm_dropout)
         # Compound branch layers
         self.compound_branch = nn.Sequential(
             SparseLinear(num_fingerprints, self.embedding_dim),

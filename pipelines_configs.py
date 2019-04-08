@@ -30,6 +30,7 @@ CONFIG = {
             "lr": 1,
             "optimizer": Adam,
             "weight_decay":0.1,
+            "lstm_dropout":0.2,
             "device": None,
             "train_split": CVSplit(3)
         }
