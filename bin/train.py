@@ -4,24 +4,31 @@
 Trains the given pipeline against the training_data
 
 Usage:
-  train.py PIPELINE_NAME PATH_OUT [--training-sample=T] [--db-port=P] [--config-path=C]
+  train.py PIPELINE_NAME PATH_OUT [--training-sample=T] [--db-port=P] [--config-path=C] [--random-state=R]
 
 Options:
   -h --help              Show this screen.
   --db-port=P            Port on which idg-dream database is listening [default: 5432]
   --training-sample=T    Path to a training sample, if provided, the pipeline will be trained against that sample.
   --config-path=C        Json file containing the pipeline's configuration
+  --random-state=R       The integer number used to fix the random seed [default: 0]
 """
 
 import os
 import sys
 import docopt
+import torch
+import numpy as np
+
 import idg_dream.pipelines as idg_dream_pipelines
 from importlib import import_module
 from idg_dream.utils import get_engine, save_pickle, load_from_csv, load_from_db
 
 
-def main(pipeline_name, path_out, db_port, config_path, training_sample_path):
+def main(pipeline_name, path_out, db_port, config_path, training_sample_path, random_state):
+    torch.manual_seed(random_state)
+    np.random.seed(random_state)
+
     engine = None
     if not training_sample_path:
         engine = get_engine(db_port)
@@ -54,5 +61,6 @@ if __name__ == '__main__':
         args["PATH_OUT"],
         db_port=args["--db-port"],
         config_path=args["--config-path"],
-        training_sample_path=args["--training-sample"]
+        training_sample_path=args["--training-sample"],
+        random_state=args["--random-state"]
     )

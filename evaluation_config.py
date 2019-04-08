@@ -1,4 +1,4 @@
-from torch.optim import SGD, Adam
+from torch.optim import *
 
 GRIDS = {
     "baseline_net": [
