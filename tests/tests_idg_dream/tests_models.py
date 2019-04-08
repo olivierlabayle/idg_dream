@@ -95,8 +95,8 @@ class TestBiLSTMProteinEmbedder(unittest.TestCase):
     def test_forward(self):
         out = self.model(*protein_inputs())
         self.assertTrue(torch.allclose(
-            torch.tensor([[0.0833, 0.0000, 0.1195, 0.0000, 0.2055, 0.2779, 0.0000, 0.0000, 0.4271],
-                          [0.0787, 0.0000, 0.1505, 0.0000, 0.1646, 0.2946, 0.0481, 0.0000, 0.3201]]),
+            torch.tensor([[0.0677, 0.0000, 0.1308, 0.0000, 0.2197, 0.2629, 0.0000, 0.0000, 0.4213],
+                          [0.0816, 0.0000, 0.1149, 0.0000, 0.1836, 0.3153, 0.0598, 0.0000, 0.3552]]),
             out,
             atol=1e-4
         ))
@@ -155,8 +155,8 @@ class TestSiameseBiLSTMFingerprints(unittest.TestCase):
         out = self.model(protein_input, compound_input, protein_lengths)
         self.assertTrue(torch.allclose(
             out,
-            torch.tensor([[-0.0220],
-                          [-0.0351]]),
+            torch.tensor([[-0.0211],
+                          [-0.0208]]),
             atol=1e-4
         ))
 

@@ -88,10 +88,8 @@ class BiLSTMProteinEmbedder(nn.Module):
         protein_embedding = self.protein_embedding(proteins_inputs)
         # In order to use mini-batch computations we will use pytorch pack_apdded_sequence
         packed_proteins = nn.utils.rnn.pack_padded_sequence(protein_embedding, proteins_lengths, batch_first=True)
-        # Initialize the cell's memory and the hidden state
-        lstm_state = self.init_lstm_state(batch_size=batch_size)
         # Let's go through LSTM layer
-        packed_proteins_features, lstm_state = self.protein_lstm(packed_proteins, lstm_state)
+        packed_proteins_features, lstm_state = self.protein_lstm(packed_proteins)
         # Undo the packing
         proteins_features, _ = nn.utils.rnn.pad_packed_sequence(packed_proteins_features, batch_first=True)
         # Rearrange lstm output

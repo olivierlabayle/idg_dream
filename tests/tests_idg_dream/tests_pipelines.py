@@ -71,9 +71,9 @@ class TestBiLSTMFingerprintPepeline(unittest.TestCase):
         train_losses = [(h['epoch'], h['train_loss']) for h in self.pipeline._final_estimator.history]
         self.assertEqual(
             train_losses,
-            [(1, 0.0232001431286335),
-             (2, 0.010991827584803104),
-             (3, 0.005418348591774702),
-             (4, 0.0028657959774136543),
-             (5, 0.0016884945798665285)]
+            [(1, 0.011257863603532314),
+             (2, 0.007060164585709572),
+             (3, 0.004600393120199442),
+             (4, 0.0031647691503167152),
+             (5, 0.0023271518293768167)]
         )
