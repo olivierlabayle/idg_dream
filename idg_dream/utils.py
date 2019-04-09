@@ -99,6 +99,12 @@ def collate_to_sparse_tensors(batch, protein_input_size=26 ** 3, compound_input_
 
 
 def inchi_to_graph(inchi, max_atomic_number=118):
+    """
+    Converts an inchi string to a DGL Graph object and associate the one hot encoding features for each node.
+    :param inchi: An inchi string
+    :param max_atomic_number: The max_atomic_number determines the final size of the nodes feature matrix
+    :return: DGL.Graph
+    """
     mol = MolFromInchi(inchi)
     num_atoms = mol.GetNumAtoms()
     # DGLGraph creation from rdkit mol object

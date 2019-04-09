@@ -1,3 +1,4 @@
+import dgl
 import torch
 import math
 import torch.nn as nn
@@ -125,6 +126,7 @@ class GCNLayer(nn.Module):
     def __init__(self, in_feats, out_feats):
         super(GCNLayer, self).__init__()
         self.linear = nn.Linear(in_feats, out_feats)
+        self.relu = nn.ReLU()
 
     def forward(self, g):
         """
@@ -135,10 +137,59 @@ class GCNLayer(nn.Module):
         g.send(g.edges(), gcn_message)
         # trigger aggregation at all nodes
         g.recv(g.nodes(), gcn_reduce)
-        # get the result node features
-        h = g.ndata.pop('x')
         # perform linear transformation
-        return self.linear(h)
+        g.ndata['x'] = self.linear(g.ndata['x'])
+        # Returns the graph
+        g.ndata['x'] = self.relu(g.ndata['x'])
+        return g
+
+
+class GraphCompoundEmbedder(nn.Module):
+    def __init__(self, in_dim, hidden_dim, mlp_sizes, nb_graph_layers=1):
+        super().__init__()
+        assert nb_graph_layers >= 1
+        layers = [GCNLayer(in_dim, hidden_dim)]
+        for i in range(1, nb_graph_layers):
+            layers.extend([GCNLayer(hidden_dim, hidden_dim)])
+        self.graph_layers = nn.Sequential(*layers)
+        self.mlp = get_mlp_from_sizes([hidden_dim] + list(mlp_sizes), activation_last=True)
+
+    def forward(self, graph):
+        """
+        Applies multiple GCN Layers followed by relu units
+        :param graph: DGLGraph
+        :return: torch.Tensor
+        """
+        # Goes through graph units
+        graph = self.graph_layers(graph)
+        # Graph readout
+        hg = dgl.mean_nodes(graph, 'x')
+        # mlp final layers
+        return self.mlp(hg)
+
+
+### Models ###
+
+
+class SiameseNetwork(nn.Module):
+    def protein_branch(self, protein_input, **protein_kwargs):
+        raise NotImplementedError
+
+    def compound_branch(self, compound_input):
+        raise NotImplementedError
+
+    def join(self, protein_features, compound_features):
+        raise NotImplementedError
+
+    def output_branch(self, joined):
+        raise NotImplementedError
+
+    def forward(self, protein_input, compound_input, **protein_kwargs):
+        protein_features = self.protein_branch(protein_input, **protein_kwargs)
+        compound_features = self.compound_branch(compound_input)
+        joined = self.join(protein_features, compound_features)
+        out = self.output_branch(joined)
+        return out
 
 
 class Baseline(nn.Module):
@@ -210,5 +261,54 @@ class SiameseBiLSTMFingerprints(nn.Module):
         compound_embedding = self.compound_branch(compound_input)
         protein_embedding = self.protein_branch(protein_input, protein_lengths)
         joined = torch.cat((protein_embedding, compound_embedding), dim=1)
-        out =  self.output_branch(joined)
+        out = self.output_branch(joined)
         return out
+
+
+class GraphBiLSTM(SiameseNetwork):
+    def __init__(self,
+                 graph_in_dim,
+                 graph_hidden_dim,
+                 num_kmers,
+                 embedding_dim,
+                 lstm_hidden_size,
+                 mlp_sizes,
+                 dropout=0,
+                 graph_layers=1):
+        super().__init__()
+        self.graph_in_dim = graph_in_dim
+        self.graph_hidden_dim = graph_hidden_dim
+        self.num_kmers = num_kmers
+        self.embedding_dim = embedding_dim
+        self.lstm_hidden_size = lstm_hidden_size
+        self.mlp_sizes = mlp_sizes
+        self.dropout = dropout
+        self._compound_branch = GraphCompoundEmbedder(
+            graph_in_dim,
+            graph_hidden_dim,
+            mlp_sizes,
+            nb_graph_layers=graph_layers
+        )
+        self._protein_branch = BiLSTMProteinEmbedder(
+            num_kmers,
+            embedding_dim,
+            lstm_hidden_size,
+            mlp_sizes,
+            dropout=dropout
+        )
+        self._output_branch = get_mlp_from_sizes(
+            [2 * self.mlp_sizes[-1]] + list(mlp_sizes) + [1],
+            activation_last=False
+        )
+
+    def compound_branch(self, compound_input):
+        return self._compound_branch(compound_input)
+
+    def protein_branch(self, protein_input, protein_lengths=None):
+        return self._protein_branch(protein_input, protein_lengths)
+
+    def join(self, protein_features, compound_features):
+        return torch.cat((protein_features, compound_features), dim=1)
+
+    def output_branch(self, joined):
+        return self._output_branch(joined)
