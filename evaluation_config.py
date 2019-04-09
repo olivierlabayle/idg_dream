@@ -17,8 +17,8 @@ GRIDS = {
         {
             "linear_regression__alpha": [1e-3, 1e-1, 1, 10, 100, 1000],
             "sparse_encoding__encode_proteins__kmer_size": [3, 5, 7],
-            "sparse_encoding__encode_ecfp__radius": [2, 3, 4],
-            "sparse_encoding__encode_ecfp__dim": [2 ** 10, 2 ** 15, 2 ** 20]
+            "sparse_encoding__encode_ecfp__radius": [4],
+            "sparse_encoding__encode_ecfp__dim": [2 ** 20]
         }
     ],
     "bilstm_fingerprint": [

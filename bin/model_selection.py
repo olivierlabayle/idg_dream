@@ -42,7 +42,7 @@ def main(pipeline_name, config_path, save_path, random_state=0, db_port=5432, tr
     config_module = import_module(os.path.splitext(module_name)[0])
     param_grid = config_module.GRIDS[pipeline_name]
 
-    grid_search = GridSearchCV(pipeline, param_grid=param_grid, scoring='neg_mean_absolute_error', cv=cv, refit=False)
+    grid_search = GridSearchCV(pipeline, param_grid=param_grid, scoring='neg_mean_squared_error', cv=cv, refit=False)
 
     if training_sample_path:
         X, y = load_from_csv(training_sample_path)
