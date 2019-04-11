@@ -34,7 +34,7 @@ database dedicated to the project.
 
 To start the postgres container, run :
 
-`IDG_DREAM_DB_PORT=5432 docker-compose -f chembl_db/docker-compose.yml up `
+`IDG_DREAM_DB_PORT=5432 docker-compose -f idg_dream_db/docker-compose.yml up -d`
 
 Note that IDG_DREAM_DB_PORT may be any port you like. 
 

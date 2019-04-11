@@ -52,8 +52,8 @@ def baseline_net(engine=None,
     else:
         device = "cpu"
 
-    protein_encoder = KmersCounter(kmer_size=kmer_size)
-    num_kmers = len(protein_encoder.kmers_mapping)
+    kmers_counter = KmersCounter(kmer_size=kmer_size)
+    num_kmers = len(kmers_counter.kmers_mapping)
     collate_fn = partial(collate_to_sparse_tensors,
                          protein_input_size=num_kmers, compound_input_size=ecfp_dim, device=torch.device(device))
     net = NeuralNetRegressor(module=Baseline,
@@ -69,7 +69,7 @@ def baseline_net(engine=None,
                              iterator_valid__collate_fn=collate_fn,
                              train_split=train_split
                              )
-    steps = [('encode_proteins', protein_encoder),
+    steps = [('encode_proteins', kmers_counter),
              ('encode_ecfp', ECFPEncoder(radius=radius, dim=ecfp_dim)),
              ('to_dict', DfToDict({'protein_input': 'kmers_counts', 'compound_input': 'ecfp_encoding'})),
              ('baseline_net', net)]
