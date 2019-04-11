@@ -193,7 +193,7 @@ class SiameseNetwork(nn.Module):
 
 
 class Baseline(nn.Module):
-    def __init__(self, num_kmers, num_fingerprints, embedding_dim=10):
+    def __init__(self, num_kmers, num_fingerprints, embedding_dim=10, dropout=0):
         """
         This model takes fix-sized inputs, it is used as a baseline.
         :param num_kmers:
@@ -204,11 +204,13 @@ class Baseline(nn.Module):
         self.num_kmers = num_kmers
         self.num_fingerprints = num_fingerprints
         self.embedding_dim = embedding_dim
-        self.protein_branch = nn.Sequential(SparseLinear(num_kmers, self.embedding_dim), nn.ReLU())
+        self.dropout=dropout
+        self.protein_branch = nn.Sequential(SparseLinear(num_kmers, self.embedding_dim), nn.ReLU(), nn.Dropout(dropout))
         self.compound_branch = nn.Sequential(SparseLinear(num_fingerprints, self.embedding_dim), nn.ReLU())
         self.output_branch = nn.Sequential(
             nn.Linear(2 * self.embedding_dim, self.embedding_dim),
             nn.ReLU(),
+            nn.Dropout(dropout),
             nn.Linear(self.embedding_dim, 1)
         )
 

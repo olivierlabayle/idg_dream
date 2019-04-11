@@ -30,7 +30,8 @@ def baseline_net(engine=None,
                  loaders=False,
                  train_split=None,
                  optimizer=SGD,
-                 weight_decay=0):
+                 weight_decay=0,
+                 dropout=0):
     """
     This pipeline is a neural net baseline using sparsed input fingerprints for both the compound (ecfp) and the
     enzyme (k-mers).
@@ -60,6 +61,7 @@ def baseline_net(engine=None,
                              module__num_kmers=num_kmers,
                              module__num_fingerprints=ecfp_dim,
                              module__embedding_dim=embedding_dim,
+                             module__dropout=dropout,
                              max_epochs=max_epochs,
                              lr=lr,
                              optimizer=optimizer,
