@@ -192,7 +192,7 @@ class SiameseNetwork(nn.Module):
         return out
 
 
-class Baseline(nn.Module):
+class Baseline(SiameseNetwork):
     def __init__(self, num_kmers, num_fingerprints, embedding_dim=10, dropout=0):
         """
         This model takes fix-sized inputs, it is used as a baseline.
@@ -205,23 +205,29 @@ class Baseline(nn.Module):
         self.num_fingerprints = num_fingerprints
         self.embedding_dim = embedding_dim
         self.dropout=dropout
-        self.protein_branch = nn.Sequential(SparseLinear(num_kmers, self.embedding_dim),
+        self._protein_branch = nn.Sequential(SparseLinear(num_kmers, self.embedding_dim),
                                             nn.ReLU(),
                                             nn.Dropout(dropout))
-        self.compound_branch = nn.Sequential(SparseLinear(num_fingerprints, self.embedding_dim),
+        self._compound_branch = nn.Sequential(SparseLinear(num_fingerprints, self.embedding_dim),
                                              nn.ReLU(),
                                              nn.Dropout(dropout))
-        self.output_branch = nn.Sequential(
+        self._output_branch = nn.Sequential(
             nn.Linear(2 * self.embedding_dim, self.embedding_dim),
             nn.ReLU(),
             nn.Linear(self.embedding_dim, 1)
         )
 
-    def forward(self, protein_input, compound_input):
-        protein_embedding = self.protein_branch(protein_input)
-        compound_embedding = self.compound_branch(compound_input)
-        joined = torch.cat((protein_embedding, compound_embedding), dim=1)
-        return self.output_branch(joined)
+    def protein_branch(self, protein_input, **kwargs):
+        return self._protein_branch(protein_input)
+
+    def compound_branch(self, compound_input):
+        return self._compound_branch(compound_input)
+
+    def output_branch(self, joined):
+        return self._output_branch(joined)
+
+    def join(self, protein_features, compound_features):
+        return torch.cat((protein_features, compound_features), dim=1)
 
 
 class SiameseBiLSTMFingerprints(nn.Module):
