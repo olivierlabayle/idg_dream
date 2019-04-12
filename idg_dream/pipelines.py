@@ -68,6 +68,7 @@ def baseline_net(engine=None,
                              optimizer__weight_decay=weight_decay,
                              device=device,
                              iterator_train__collate_fn=collate_fn,
+                             iterator_train__shuffle=True,
                              iterator_valid__collate_fn=collate_fn,
                              train_split=train_split
                              )
@@ -124,6 +125,7 @@ def bilstm_fingerprint(engine=None,
                              optimizer=optimizer,
                              optimizer__weight_decay=weight_decay,
                              device=device,
+                             iterator_train__shuffle=True,
                              iterator_train__collate_fn=collate_fn,
                              iterator_valid__collate_fn=collate_fn,
                              train_split=train_split

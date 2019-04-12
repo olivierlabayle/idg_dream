@@ -10,10 +10,10 @@ from idg_dream import pipelines
 from idg_dream.utils import load_from_csv
 
 
-class TestBaselinePipeline(unittest.TestCase):
+class TestBaselineNetPipeline(unittest.TestCase):
     def setUp(self):
         torch.manual_seed(0)
-        self.pipeline = pipelines.baseline_net(max_epochs=10)
+        self.pipeline = pipelines.baseline_net(max_epochs=10, dropout=0.2, lr=1e-1)
         self.training_sample_path = os.path.join("tests", "training_sample_100.csv")
 
     def test_fit(self):
@@ -22,10 +22,16 @@ class TestBaselinePipeline(unittest.TestCase):
         train_losses = [(h['epoch'], h['train_loss']) for h in self.pipeline._final_estimator.history]
         self.assertEqual(
             train_losses,
-            [(1, 0.09648986905813217), (2, 0.03842122480273247), (3, 0.03089130111038685),
-             (4, 0.025661496445536613), (5, 0.021845480427145958), (6, 0.01892860420048237),
-             (7, 0.016651982441544533), (8, 0.014866072684526443), (9, 0.013424623757600784),
-             (10, 0.012224127538502216)]
+            [(1, 0.19911019504070282),
+             (2, 0.07006944715976715),
+             (3, 0.04542629420757294),
+             (4, 0.03575495630502701),
+             (5, 0.03279704973101616),
+             (6, 0.025873012840747833),
+             (7, 0.023428773507475853),
+             (8, 0.023023175075650215),
+             (9, 0.015065216459333897),
+             (10, 0.01120317354798317)]
         )
 
     def test_internal_cross_validate(self):
@@ -43,7 +49,7 @@ class TestBaselinePipeline(unittest.TestCase):
         )
 
 
-class TestLogisticReactionPipeline(unittest.TestCase):
+class TestLinearRegressionPipeline(unittest.TestCase):
     def setUp(self):
         np.random.seed(0)
         self.pipeline = pipelines.linear_regression()

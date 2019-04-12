@@ -9,12 +9,12 @@ CONFIG = {
             "ecfp_dim": 2 ** 20,
             "embedding_dim": 20,
             "lr": 0.1,
-            "weight_decay":0.1,
+            "weight_decay": 0.1,
             "max_epochs": 50,
             "device": None,
             "loaders": False,
             "optimizer": Adam,
-            "train_split": CVSplit(3)
+            "train_split": CVSplit(0.2, random_state=0)
         },
     "bilstm_fingerprint":
         {
@@ -29,9 +29,9 @@ CONFIG = {
             "max_epochs": 10,
             "lr": 1e-3,
             "optimizer": Adam,
-            "weight_decay":1e-3,
-            "lstm_dropout":0.2,
+            "weight_decay": 1e-3,
+            "lstm_dropout": 0.2,
             "device": None,
-            "train_split": CVSplit(3)
+            "train_split": CVSplit(0.2, random_state=0)
         }
 }

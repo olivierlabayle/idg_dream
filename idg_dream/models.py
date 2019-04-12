@@ -205,12 +205,15 @@ class Baseline(nn.Module):
         self.num_fingerprints = num_fingerprints
         self.embedding_dim = embedding_dim
         self.dropout=dropout
-        self.protein_branch = nn.Sequential(SparseLinear(num_kmers, self.embedding_dim), nn.ReLU(), nn.Dropout(dropout))
-        self.compound_branch = nn.Sequential(SparseLinear(num_fingerprints, self.embedding_dim), nn.ReLU())
+        self.protein_branch = nn.Sequential(SparseLinear(num_kmers, self.embedding_dim),
+                                            nn.ReLU(),
+                                            nn.Dropout(dropout))
+        self.compound_branch = nn.Sequential(SparseLinear(num_fingerprints, self.embedding_dim),
+                                             nn.ReLU(),
+                                             nn.Dropout(dropout))
         self.output_branch = nn.Sequential(
             nn.Linear(2 * self.embedding_dim, self.embedding_dim),
             nn.ReLU(),
-            nn.Dropout(dropout),
             nn.Linear(self.embedding_dim, 1)
         )
 
