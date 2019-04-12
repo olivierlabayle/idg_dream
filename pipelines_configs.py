@@ -2,7 +2,7 @@ from skorch.dataset import CVSplit
 from torch.optim import *
 
 CONFIG = {
-    "baseline_net":
+    "BaselineNetFactory":
         {
             "kmer_size": 3,
             "radius": 4,
@@ -16,7 +16,8 @@ CONFIG = {
             "optimizer": Adam,
             "train_split": CVSplit(0.2, random_state=0)
         },
-    "bilstm_fingerprint":
+    "LinearRegressionFactory": {},
+    "BiLSTMFingerprintFactory":
         {
             "engine": None,
             "loaders": False,

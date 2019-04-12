@@ -26,7 +26,7 @@ from importlib import import_module
 from idg_dream.utils import get_engine, save_pickle, load_from_csv, load_from_db
 
 
-def main(pipeline_name, path_out, db_port, db_host, config_path, training_sample_path, random_state):
+def main(factory_name, path_out, db_port, db_host, config_path, training_sample_path, random_state):
     torch.manual_seed(random_state)
     np.random.seed(random_state)
 
@@ -39,9 +39,9 @@ def main(pipeline_name, path_out, db_port, db_host, config_path, training_sample
         module_path, module_name = os.path.split(config_path)
         sys.path.append(module_path)
         config_module = import_module(os.path.splitext(module_name)[0])
-        config_dict.update(config_module.CONFIG[pipeline_name])
+        config_dict.update(config_module.CONFIG[factory_name])
 
-    pipeline = getattr(idg_dream_pipelines, pipeline_name)(
+    pipeline = getattr(idg_dream_pipelines, factory_name)(
         **config_dict
     )
 

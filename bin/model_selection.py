@@ -26,7 +26,7 @@ from idg_dream.utils import get_engine, save_pickle, load_from_csv, load_from_db
 from sklearn.model_selection import KFold, GridSearchCV, ShuffleSplit
 
 
-def main(pipeline_name, config_path, save_path, random_state=0, db_port=5432, db_host='127.0.0.1', training_sample_path=None):
+def main(factory_name, config_path, save_path, random_state=0, db_port=5432, db_host='127.0.0.1', training_sample_path=None):
     torch.manual_seed(random_state)
     np.random.seed(random_state)
 
@@ -34,14 +34,14 @@ def main(pipeline_name, config_path, save_path, random_state=0, db_port=5432, db
     if not training_sample_path:
         engine = get_engine(db_port, db_host)
 
-    pipeline = getattr(idg_dream_pipelines, pipeline_name)(engine=engine)
+    pipeline = getattr(idg_dream_pipelines, factory_name)()
 
     cv = ShuffleSplit(3, test_size=0.2, random_state=random_state)
 
     module_path, module_name = os.path.split(config_path)
     sys.path.append(module_path)
     config_module = import_module(os.path.splitext(module_name)[0])
-    param_grid = config_module.GRIDS[pipeline_name]
+    param_grid = config_module.GRIDS[factory_name]
 
     grid_search = GridSearchCV(pipeline, param_grid=param_grid, scoring='neg_mean_squared_error', cv=cv, refit=False)
 
