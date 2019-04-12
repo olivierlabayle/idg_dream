@@ -23,7 +23,7 @@ import numpy as np
 import idg_dream.pipelines as idg_dream_pipelines
 from importlib import import_module
 from idg_dream.utils import get_engine, save_pickle, load_from_csv, load_from_db
-from sklearn.model_selection import KFold, GridSearchCV, ShuffleSplit
+from sklearn.model_selection import GridSearchCV, ShuffleSplit
 
 
 def main(factory_name, config_path, save_path, random_state=0, db_port=5432, db_host='127.0.0.1', training_sample_path=None):
@@ -34,7 +34,7 @@ def main(factory_name, config_path, save_path, random_state=0, db_port=5432, db_
     if not training_sample_path:
         engine = get_engine(db_port, db_host)
 
-    pipeline = getattr(idg_dream_pipelines, factory_name)()
+    pipeline = getattr(idg_dream_pipelines, factory_name)()()
 
     cv = ShuffleSplit(3, test_size=0.2, random_state=random_state)
 

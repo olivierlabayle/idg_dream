@@ -132,11 +132,7 @@ def get_kmers_mapping(kmer_size):
                 enumerate(itertools.product(ExtendedIUPACProtein.letters, repeat=kmer_size)))
 
 
-def collate_bilstm_fingerprint(batch, device=torch.device("cpu"), ecfp_dim=2 ** 10):
-    """
-    need to sort by length
-    :return:
-    """
+def sort_batch(batch):
     protein_inputs, protein_lengths, compound_inputs, targets = [], [], [], []
     for x, y in batch:
         protein_inputs.append(x['protein_input'])
@@ -145,11 +141,30 @@ def collate_bilstm_fingerprint(batch, device=torch.device("cpu"), ecfp_dim=2 ** 
         targets.append(y)
 
     order = np.argsort(protein_lengths)[::-1]
-    protein_lengths = np.array(protein_lengths)[order]
-    protein_inputs = np.array(protein_inputs)[order]
-    compound_inputs = np.array(compound_inputs)[order]
-    targets = np.array(targets, dtype=np.float32)[order]
+    return np.array(compound_inputs)[order], np.array(protein_inputs)[order], \
+           np.array(protein_lengths)[order], np.array(targets, dtype=np.float32)[order]
 
+
+def collate_bilstm_fingerprint(batch, device=torch.device("cpu"), ecfp_dim=2 ** 10):
+    """
+    need to sort by length
+    :return:
+    """
+    compound_inputs, protein_inputs, protein_lengths, targets = sort_batch(batch)
+
+    return (
+        {
+            "compound_input": to_sparse(compound_inputs, update_sparse_data_from_list, ecfp_dim,
+                                        return_torch=True).to(device),
+            "protein_input": torch.from_numpy(protein_inputs).to(device),
+            "protein_lengths": torch.from_numpy(protein_lengths).to(device)
+        },
+        torch.from_numpy(targets).to(device)
+    )
+
+
+def collate_graph_bilstm(batch, device=torch.device("cpu")):
+    compound_inputs, protein_inputs, protein_lengths, targets = sort_batch(batch)
     return (
         {
             "compound_input": to_sparse(compound_inputs, update_sparse_data_from_list, ecfp_dim,

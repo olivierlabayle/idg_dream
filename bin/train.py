@@ -41,7 +41,7 @@ def main(factory_name, path_out, db_port, db_host, config_path, training_sample_
         config_module = import_module(os.path.splitext(module_name)[0])
         config_dict.update(config_module.CONFIG[factory_name])
 
-    pipeline = getattr(idg_dream_pipelines, factory_name)(
+    pipeline = getattr(idg_dream_pipelines, factory_name)()(
         **config_dict
     )
 

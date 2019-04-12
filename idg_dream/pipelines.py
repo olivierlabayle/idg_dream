@@ -5,7 +5,8 @@ from sklearn.linear_model import Ridge
 from torch.optim import SGD
 
 from idg_dream.models import Baseline, SiameseBiLSTMFingerprints
-from idg_dream.transformers import InchiLoader, SequenceLoader, KmersCounter, ECFPEncoder, DfToDict, KmerEncoder
+from idg_dream.transformers import InchiLoader, SequenceLoader, KmersCounter, ECFPEncoder, DfToDict, KmerEncoder, \
+    InchiToDG
 from functools import partial
 
 from idg_dream.utils import collate_to_sparse_tensors, collate_bilstm_fingerprint
@@ -161,3 +162,46 @@ class BiLSTMFingerprintFactory(PipelineFactory):
                 {'protein_input': 'kmers_encoding', 'compound_input': 'ecfp_encoding',
                  'protein_lengths': 'encoding_len'})),
             ('bilstm_fingerprint', net)]
+
+
+class GraphBiLSTMFactory(PipelineFactory):
+    def get_steps(self,
+                  kmer_size=3,
+                  graph_in_dim=10,
+                  graph_hidden_dim=10,
+                  embedding_dim=10,
+                  lstm_hidden_size=10,
+                  mlp_sizes=(10,),
+                  dropout=0,
+                  graph_layers=1,
+                  max_epochs=10,
+                  lr=1e-1,
+                  optimizer=SGD,
+                  device=None,
+                  weight_decay=1e-1,
+                  train_split=None):
+        kmers_encoder = KmerEncoder(kmer_size=kmer_size, pad=True)
+        net = NeuralNetRegressor(module=SiameseBiLSTMFingerprints,
+                                 module__num_kmers=kmers_encoder.dim + 1,
+                                 module__graph_in_dim=graph_in_dim,
+                                 module__graph_hidden_size=graph_hidden_dim,
+                                 module__embedding_dim=embedding_dim,
+                                 module__lstm_hidden_size=lstm_hidden_size,
+                                 module__mlp_sizes=mlp_sizes,
+                                 module__dropout=dropout,
+                                 max_epochs=max_epochs,
+                                 lr=lr,
+                                 optimizer=optimizer,
+                                 optimizer__weight_decay=weight_decay,
+                                 device=device,
+                                 iterator_train__shuffle=True,
+                                 iterator_train__collate_fn=collate_fn,
+                                 iterator_valid__collate_fn=collate_fn,
+                                 train_split=train_split
+                                 )
+        return [('encode_proteins', kmers_encoder),
+                ('graph_encoding', InchiToDG()),
+                ('to_dict', DfToDict(
+                    {'protein_input': 'kmers_encoding', 'compound_input': 'dg_graph',
+                     'protein_lengths': 'encoding_len'})),
+                ('bilstm_fingerprint', net)]
