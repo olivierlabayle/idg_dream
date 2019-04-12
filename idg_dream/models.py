@@ -230,7 +230,7 @@ class Baseline(SiameseNetwork):
         return self.bilinear(protein_features, compound_features)
 
 
-class SiameseBiLSTMFingerprints(nn.Module):
+class SiameseBiLSTMFingerprints(SiameseNetwork):
     def __init__(self, num_kmers, num_fingerprints, embedding_dim, hidden_size, mlp_sizes, lstm_dropout=0):
         """
         This model is a siamese model that uses :
@@ -251,29 +251,34 @@ class SiameseBiLSTMFingerprints(nn.Module):
         self.mlp_sizes = mlp_sizes
         self.lstm_dropout = lstm_dropout
         # Protein branch layers
-        self.protein_branch = BiLSTMProteinEmbedder(num_kmers,
+        self._protein_branch = BiLSTMProteinEmbedder(num_kmers,
                                                     embedding_dim,
                                                     hidden_size,
                                                     mlp_sizes,
                                                     dropout=lstm_dropout)
         # Compound branch layers
-        self.compound_branch = nn.Sequential(
+        self._compound_branch = nn.Sequential(
             SparseLinear(num_fingerprints, self.embedding_dim),
             nn.ReLU(),
             get_mlp_from_sizes([self.embedding_dim] + list(mlp_sizes))
         )
         # Out layers
-        self.output_branch = get_mlp_from_sizes(
+        self._output_branch = get_mlp_from_sizes(
             [2 * self.mlp_sizes[-1]] + list(mlp_sizes) + [1],
             activation_last=False
         )
 
-    def forward(self, protein_input, compound_input, protein_lengths):
-        compound_embedding = self.compound_branch(compound_input)
-        protein_embedding = self.protein_branch(protein_input, protein_lengths)
-        joined = torch.cat((protein_embedding, compound_embedding), dim=1)
-        out = self.output_branch(joined)
-        return out
+    def compound_branch(self, compound_input):
+        return self._compound_branch(compound_input)
+
+    def protein_branch(self, protein_input, protein_lengths=None):
+        return self._protein_branch(protein_input, protein_lengths)
+
+    def join(self, protein_features, compound_features):
+        return torch.cat((protein_features, compound_features), dim=1)
+
+    def output_branch(self, joined):
+        return self._output_branch(joined)
 
 
 class GraphBiLSTM(SiameseNetwork):
