@@ -211,8 +211,8 @@ class Baseline(SiameseNetwork):
         self._compound_branch = nn.Sequential(SparseLinear(num_fingerprints, self.embedding_dim),
                                              nn.ReLU(),
                                              nn.Dropout(dropout))
+        self.bilinear = nn.Bilinear(self.embedding_dim, self.embedding_dim, self.embedding_dim)
         self._output_branch = nn.Sequential(
-            nn.Linear(2 * self.embedding_dim, self.embedding_dim),
             nn.ReLU(),
             nn.Linear(self.embedding_dim, 1)
         )
@@ -227,7 +227,7 @@ class Baseline(SiameseNetwork):
         return self._output_branch(joined)
 
     def join(self, protein_features, compound_features):
-        return torch.cat((protein_features, compound_features), dim=1)
+        return self.bilinear(protein_features, compound_features)
 
 
 class SiameseBiLSTMFingerprints(nn.Module):

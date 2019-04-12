@@ -13,7 +13,7 @@ from idg_dream.utils import load_from_csv
 class TestBaselineNetPipeline(unittest.TestCase):
     def setUp(self):
         torch.manual_seed(0)
-        self.pipeline = pipelines.baseline_net(max_epochs=10, dropout=0.2, lr=1e-1)
+        self.pipeline = pipelines.baseline_net(max_epochs=10, lr=1e-5)
         self.training_sample_path = os.path.join("tests", "training_sample_100.csv")
 
     def test_fit(self):
