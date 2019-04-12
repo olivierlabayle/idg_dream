@@ -25,14 +25,14 @@ class AbstractDeepPipelineTester:
 class TestBaselineNetPipeline(unittest.TestCase, AbstractDeepPipelineTester):
     def setUp(self):
         super().setUp()
-        self.pipeline = pipelines.baseline_net(max_epochs=10, lr=1e-3)
+        self.pipeline = pipelines.BaselineNetFactory()(max_epochs=10, lr=1e-3)
         self.training_sample_path = os.path.join("tests", "training_sample_100.csv")
 
 
 class TestLinearRegressionPipeline(unittest.TestCase):
     def setUp(self):
         super().setUp()
-        self.pipeline = pipelines.linear_regression()
+        self.pipeline = pipelines.LinearRegressionFactory()()
         self.training_sample_path = os.path.join("tests", "training_sample_100.csv")
 
     def test_fit(self):
@@ -46,5 +46,5 @@ class TestLinearRegressionPipeline(unittest.TestCase):
 class TestBiLSTMFingerprintPepeline(unittest.TestCase, AbstractDeepPipelineTester):
     def setUp(self):
         super().setUp()
-        self.pipeline = pipelines.bilstm_fingerprint(lr=0.1, max_epochs=5)
+        self.pipeline = pipelines.BiLSTMFingerprintFactory()(lr=0.1, max_epochs=5)
         self.training_sample_path = os.path.join("tests", "training_sample_100.csv")
