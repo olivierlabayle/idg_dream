@@ -7,10 +7,13 @@ from skorch.dataset import CVSplit
 from sklearn.metrics import mean_squared_error
 
 from idg_dream import pipelines
+from idg_dream.pipelines import GraphBiLSTMFactory
 from idg_dream.utils import load_from_csv
 
 
 class AbstractDeepPipelineTester:
+    training_sample_path = os.path.join("tests", "training_sample_100.csv")
+
     def setUp(self):
         torch.manual_seed(0)
 
@@ -26,7 +29,6 @@ class TestBaselineNetPipeline(unittest.TestCase, AbstractDeepPipelineTester):
     def setUp(self):
         super().setUp()
         self.pipeline = pipelines.BaselineNetFactory()(max_epochs=10, lr=1e-3)
-        self.training_sample_path = os.path.join("tests", "training_sample_100.csv")
 
 
 class TestLinearRegressionPipeline(unittest.TestCase):
@@ -43,8 +45,13 @@ class TestLinearRegressionPipeline(unittest.TestCase):
         self.assertLessEqual(mse, 1)
 
 
-class TestBiLSTMFingerprintPepeline(unittest.TestCase, AbstractDeepPipelineTester):
+class TestBiLSTMFingerprintPipeline(unittest.TestCase, AbstractDeepPipelineTester):
     def setUp(self):
         super().setUp()
         self.pipeline = pipelines.BiLSTMFingerprintFactory()(lr=0.1, max_epochs=5)
-        self.training_sample_path = os.path.join("tests", "training_sample_100.csv")
+
+
+class TestGraphBiLSTMPipeline(unittest.TestCase, AbstractDeepPipelineTester):
+    def setUp(self):
+        super().setUp()
+        self.pipeline = GraphBiLSTMFactory()(lr=0.1, max_epochs=5)

@@ -7,6 +7,7 @@ import itertools
 import dgl
 from Bio.Alphabet.IUPAC import ExtendedIUPACProtein
 from rdkit.Chem import MolFromInchi
+from skorch import NeuralNetRegressor
 from sqlalchemy import create_engine
 
 
@@ -98,7 +99,7 @@ def collate_to_sparse_tensors(batch, protein_input_size=26 ** 3, compound_input_
     )
 
 
-def inchi_to_graph(inchi, max_atomic_number=118):
+def inchi_to_graph(inchi, max_atomic_number=118, device=torch.device('cpu')):
     """
     Converts an inchi string to a DGL Graph object and associate the one hot encoding features for each node.
     :param inchi: An inchi string
@@ -122,7 +123,7 @@ def inchi_to_graph(inchi, max_atomic_number=118):
     for atom_index in range(num_atoms):
         one_hot_indexes.append([mol.GetAtomWithIdx(atom_index).GetAtomicNum()])
     graph.ndata['x'] = torch.zeros(num_atoms, max_atomic_number) \
-        .scatter_(1, torch.tensor(one_hot_indexes), 1)
+        .scatter_(1, torch.tensor(one_hot_indexes), 1).to(device)
 
     return graph
 
@@ -167,10 +168,22 @@ def collate_graph_bilstm(batch, device=torch.device("cpu")):
     compound_inputs, protein_inputs, protein_lengths, targets = sort_batch(batch)
     return (
         {
-            "compound_input": to_sparse(compound_inputs, update_sparse_data_from_list, ecfp_dim,
-                                        return_torch=True).to(device),
+            "compound_input": compound_inputs,
             "protein_input": torch.from_numpy(protein_inputs).to(device),
             "protein_lengths": torch.from_numpy(protein_lengths).to(device)
         },
         torch.from_numpy(targets).to(device)
     )
+
+
+class LenDGLGraph(dgl.DGLGraph):
+    def __len__(self):
+        return self._batch_size
+
+
+class DGLHackedNeuralNetRegressor(NeuralNetRegressor):
+    def infer(self, x, **fit_params):
+        if isinstance(x, dict):
+            x_dict = self._merge_x_and_fit_params(x, fit_params)
+            return self.module_(**x_dict)
+        return self.module_(x, **fit_params)

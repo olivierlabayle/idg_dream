@@ -318,6 +318,8 @@ class GraphBiLSTM(SiameseNetwork):
         )
 
     def compound_branch(self, compound_input):
+        if not isinstance(compound_input, dgl.DGLGraph):
+            compound_input = dgl.batch(compound_input)
         return self._compound_branch(compound_input)
 
     def protein_branch(self, protein_input, protein_lengths=None):
