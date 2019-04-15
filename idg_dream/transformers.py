@@ -1,4 +1,5 @@
 import pandas as pd
+import torch
 from rdkit.Chem import MolFromInchi, AllChem
 from sklearn.base import TransformerMixin, BaseEstimator
 from sqlalchemy import text
@@ -9,6 +10,7 @@ from idg_dream.utils import update_sparse_data_from_list, update_sparse_data_fro
 class NoFitterTransformer(TransformerMixin, BaseEstimator):
     def fit(self, X, y=None):
         return self
+
 
 class SequenceLoader(NoFitterTransformer):
     def __init__(self, engine):
@@ -139,7 +141,10 @@ class DfToDict(NoFitterTransformer):
 
 
 class InchiToDG(NoFitterTransformer):
+    def __init__(self, device=torch.device('cpu')):
+        self.device = device
+
     def transform(self, X):
         Xt = X.copy()
-        Xt['dg_graph'] = Xt['standard_inchi'].apply(inchi_to_graph)
+        Xt['dg_graph'] = Xt['standard_inchi'].apply(inchi_to_graph, device=self.device)
         return Xt

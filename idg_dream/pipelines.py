@@ -201,7 +201,7 @@ class GraphBiLSTMFactory(PipelineFactory):
                                           train_split=train_split
                                           )
         return [('encode_proteins', kmers_encoder),
-                ('graph_encoding', InchiToDG()),
+                ('graph_encoding', InchiToDG(device=torch.device(device))),
                 ('to_dict', DfToDict(
                     {'protein_input': 'kmers_encoding', 'compound_input': 'dg_graph',
                      'protein_lengths': 'encoding_len'})),
