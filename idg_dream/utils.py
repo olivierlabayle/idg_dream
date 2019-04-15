@@ -176,11 +176,6 @@ def collate_graph_bilstm(batch, device=torch.device("cpu")):
     )
 
 
-class LenDGLGraph(dgl.DGLGraph):
-    def __len__(self):
-        return self._batch_size
-
-
 class DGLHackedNeuralNetRegressor(NeuralNetRegressor):
     def infer(self, x, **fit_params):
         if isinstance(x, dict):
