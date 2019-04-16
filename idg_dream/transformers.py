@@ -1,6 +1,7 @@
 import pandas as pd
 import torch
 from rdkit.Chem import MolFromInchi, AllChem
+from rdkit.Chem.rdmolfiles import MolFromSmiles
 from sklearn.base import TransformerMixin, BaseEstimator
 from sqlalchemy import text
 from idg_dream.utils import update_sparse_data_from_list, update_sparse_data_from_dict, to_sparse, inchi_to_graph, \
@@ -117,15 +118,18 @@ class ECFPEncoder(NoFitterTransformer):
         self.sparse_output = sparse_output
         self.dim = dim
 
-    def _transform(self, inchi):
-        mol = MolFromInchi(inchi)
+    def _transform(self, x):
+        try:
+            mol = MolFromInchi(x['standard_inchi'])
+        except:
+            mol = MolFromSmiles(x['Compound_SMILES'])
         info = {}
         AllChem.GetMorganFingerprintAsBitVect(mol, self.radius, self.dim, bitInfo=info)
         return list(info.keys())
 
     def transform(self, X):
         Xt = X.copy()
-        Xt['ecfp_encoding'] = Xt['standard_inchi'].apply(self._transform)
+        Xt['ecfp_encoding'] = Xt.apply(self._transform, axis=1)
         if self.sparse_output:
             return to_sparse(Xt['ecfp_encoding'], update_sparse_data_from_list, self.dim)
         return Xt

@@ -37,7 +37,6 @@ def load_from_csv(path, y_name='standard_value'):
         return data, None
 
 
-
 def load_from_db(engine):
     data = pd.read_sql("select * from training_set;", con=engine)
     y = data[['standard_value']].values
