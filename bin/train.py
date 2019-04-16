@@ -50,9 +50,13 @@ def main(factory_name, path_out, db_port, db_host, config_path, training_sample_
     else:
         X, y = load_from_db(engine)
 
+    print(f"Dataset size : {len(X)}")
+
     pipeline.fit(X, y)
 
     save_pickle(pipeline, path_out)
+
+    print(f"Model saved at : {path_out}")
 
 
 if __name__ == '__main__':

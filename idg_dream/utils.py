@@ -11,6 +11,9 @@ from skorch import NeuralNetRegressor
 from sqlalchemy import create_engine
 
 
+NB_AMINO_ACID = len(ExtendedIUPACProtein.letters)
+
+
 def get_engine(db_port, host='127.0.0.1'):
     return create_engine(f'postgresql+pg8000://idg_dream:idg_dream@{host}:{db_port}/idg_dream', echo=False)
 
@@ -25,11 +28,14 @@ def load_pickle(path):
         return pickle.load(f)
 
 
-def load_from_csv(path):
+def load_from_csv(path, y_name='standard_value'):
     data = pd.read_csv(path)
-    y = data[['standard_value']].values
-    X = data.drop('standard_value', axis=1)
-    return X, y
+    if y_name:
+        y = data[['standard_value']].values
+        return data.drop('standard_value', axis=1), y
+    else:
+        return data, None
+
 
 
 def load_from_db(engine):

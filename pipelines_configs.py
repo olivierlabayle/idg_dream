@@ -16,7 +16,12 @@ CONFIG = {
             "optimizer": Adam,
             "train_split": CVSplit(0.2, random_state=0)
         },
-    "LinearRegressionFactory": {},
+    "LinearRegressionFactory":
+        {'alpha': 100,
+         'ecfp_dim': 2**22,
+         'radius': 6,
+         'kmer_size': 3}
+    ,
     "BiLSTMFingerprintFactory":
         {
             "engine": None,

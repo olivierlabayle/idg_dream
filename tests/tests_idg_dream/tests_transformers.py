@@ -33,7 +33,7 @@ class TestSequenceLoader(unittest.TestCase):
                             columns=["target_id", "index_column"])
 
     def test_transform(self):
-        X_transformed = self.transformer.transform(self.get_X())
+        X_transformed = self.transformer.fit_transform(self.get_X())
         expected_df = pd.DataFrame([['Q9Y4K4', 0, 'ACGTG'],
                                     ['Q9Y478', 1, 'GTGTGG'],
                                     ['Q9Y4K4', 2, 'ACGTG'],
@@ -73,7 +73,7 @@ class TestInchiLoader(unittest.TestCase):
                             columns=["standard_inchi_key", "index_column"])
 
     def test_transform(self):
-        X_transformed = self.transformer.transform(self.get_X())
+        X_transformed = self.transformer.fit_transform(self.get_X())
         expected_df = pd.DataFrame(
             [['OWRSAHYFSSNENM-UHFFFAOYSA-N', 0,
               'InChI=1S/C17H12ClN3O3/c1-10-8-11(21-17(24)20-15(22)9-19-21)6-7-12(10)16(23)13-4-2-3-5-14(13)18/h2-9H,1H3,(H,20,22,24)'],
@@ -93,7 +93,7 @@ class TestProteinEncoder(unittest.TestCase):
 
     def test_transform(self):
         X = pd.DataFrame([["ACGTGATAGT"], ["ATCTAGATGGTCTAGTAG"]], columns=['sequence'])
-        X_transformed = self.transformer.transform(X)
+        X_transformed = self.transformer.fit_transform(X)
         pd.testing.assert_frame_equal(
             X_transformed,
             pd.DataFrame([["ACGTGATAGT", {31: 1, 10946: 1, 10821: 1}],
@@ -104,7 +104,7 @@ class TestProteinEncoder(unittest.TestCase):
     def test_transform_k_equal_1(self):
         transformer = KmersCounter(kmer_size=1)
         X = pd.DataFrame([["ACG"], ["GGTC"]], columns=['sequence'])
-        X_transformed = transformer.transform(X)
+        X_transformed = transformer.fit_transform(X)
         pd.testing.assert_frame_equal(
             X_transformed,
             pd.DataFrame([["ACG", {0: 1, 1: 1, 5: 1}],
@@ -115,7 +115,7 @@ class TestProteinEncoder(unittest.TestCase):
     def test_transform_with_sparse_output(self):
         X = pd.DataFrame([["ACGTGATAGT"], ["ATCTAGATGGTCTAGTAG"]], columns=['sequence'])
         transformer = KmersCounter(kmer_size=2, sparse_output=True)
-        Xt = transformer.transform(X)
+        Xt = transformer.fit_transform(X)
         expected_nonzeros = (np.array([0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1], dtype=np.int32),
                              np.array([1, 130, 146, 416, 5, 16, 42, 135, 146, 416, 417], dtype=np.int32))
         for i, elem in enumerate(Xt.nonzero()):
@@ -136,7 +136,7 @@ class TestECFPEncoder(unittest.TestCase):
 
     def test_transform(self):
         X = self.get_X()
-        X_transformed = self.transformer.transform(X)
+        X_transformed = self.transformer.fit_transform(X)
         pd.testing.assert_frame_equal(
             X_transformed,
             pd.DataFrame([["InChI=1S/CO2/c2-1-3", [633848, 899457, 899746, 916106]],
@@ -155,7 +155,7 @@ class TestECFPEncoder(unittest.TestCase):
     def test_transform_with_sparse_output(self):
         X = self.get_X()
         transformer = ECFPEncoder(radius=4, sparse_output=True)
-        Xt = transformer.transform(X)
+        Xt = transformer.fit_transform(X)
         expected_nonzeros = (np.array([0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                        1, 1, 1], dtype=np.int32),
@@ -178,7 +178,7 @@ class TestInchiToDG(unittest.TestCase):
         X = pd.DataFrame([["acetic_acid", "InChI=1/C2H4O2/c1-2(3)4/h1H3,(H,3,4)/f/h3H"],
                           ["carbon_dioxyde", "InChI=1S/CO2/c2-1-3"]],
                          columns=["name", "standard_inchi"])
-        Xt = self.transformer.transform(X)
+        Xt = self.transformer.fit_transform(X)
         # Check acetic acid: CC(=O)O
         graph = Xt.loc[0, "dg_graph"]
         ## Nodes 0 and 1 are carbon atoms while 2 and 3 are oxygen atoms
@@ -225,7 +225,7 @@ class TestKmersEncoder(unittest.TestCase):
                              ["GHSSDFVEAEWKPWQDDQTAYAYSYYR"]], columns=["sequence"])
 
     def test_transform_with_k_equal_3_and_padding(self):
-        Xt = self.transformer.transform(self.get_X())
+        Xt = self.transformer.fit_transform(self.get_X())
         pd.testing.assert_series_equal(
             Xt['kmers_encoding'],
             pd.Series(
@@ -243,7 +243,7 @@ class TestKmersEncoder(unittest.TestCase):
 
     def test_transform_with_k_equal_1_no_padding(self):
         transformer = KmerEncoder(kmer_size=1, pad=False)
-        Xt = transformer.transform(self.get_X())
+        Xt = transformer.fit_transform(self.get_X())
         pd.testing.assert_series_equal(
             Xt['kmers_encoding'],
             pd.Series([

@@ -15,10 +15,10 @@ GRIDS = {
     ],
     "LinearRegressionFactory": [
         {
-            "linear_regression__alpha": [1e-2, 1e-1, 1, 10],
-            "sparse_encoding__encode_proteins__kmer_size": [3, 5, 7],
-            "sparse_encoding__encode_ecfp__radius": [4],
-            "sparse_encoding__encode_ecfp__dim": [2 ** 20]
+            "linear_regression__alpha": [100, 1000],
+            "sparse_encoding__encode_proteins__kmer_size": [7],
+            "sparse_encoding__encode_ecfp__radius": [6],
+            "sparse_encoding__encode_ecfp__dim": [2 ** 22]
         }
     ],
     "BiLSTMFingerprintFactory": [

@@ -10,7 +10,7 @@ from idg_dream.transformers import InchiLoader, SequenceLoader, KmersCounter, EC
 from functools import partial
 
 from idg_dream.utils import collate_to_sparse_tensors, collate_bilstm_fingerprint, collate_graph_bilstm, \
-    DGLHackedNeuralNetRegressor
+    DGLHackedNeuralNetRegressor, NB_AMINO_ACID
 
 
 def add_loader(cond, steps, engine):
@@ -71,7 +71,7 @@ class BaselineNetFactory(PipelineFactory):
         :return: sklearn.pipeline.Pipeline
         """
         kmers_counter = KmersCounter(kmer_size=kmer_size)
-        num_kmers = len(kmers_counter.kmers_mapping)
+        num_kmers = NB_AMINO_ACID**kmer_size
         collate_fn = partial(collate_to_sparse_tensors,
                              protein_input_size=num_kmers, compound_input_size=ecfp_dim, device=torch.device(device))
         net = NeuralNetRegressor(module=Baseline,

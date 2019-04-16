@@ -49,25 +49,24 @@ class InchiLoader(NoFitterTransformer):
 
 
 class KmersCounter(NoFitterTransformer):
-    def __init__(self, kmer_size, sparse_output=False):
+    def __init__(self, kmer_size=3, sparse_output=False):
         self.kmer_size = kmer_size
         self.sparse_output = sparse_output
-        self.init_kmers_mapping()
+        self.fitted_ = False
 
-    def init_kmers_mapping(self):
-        self.kmers_mapping = get_kmers_mapping(self.kmer_size)
-        self.dim = len(self.kmers_mapping)
-
-    def set_params(self, **params):
-        super().set_params()
-        self.init_kmers_mapping()
+    def fit(self, X, y=None):
+        if not self.fitted_:
+            self.kmers_mapping_ = get_kmers_mapping(self.kmer_size)
+            self.dim_ = len(self.kmers_mapping_)
+            self.fitted_ = True
+        return self
 
     def _transform(self, sequence):
         n = len(sequence)
         last_amino_acid_index = n - n % self.kmer_size
         freqs = {}
         for i in range(0, last_amino_acid_index, self.kmer_size):
-            kmer_id = self.kmers_mapping[sequence[i:i + self.kmer_size]]
+            kmer_id = self.kmers_mapping_[sequence[i:i + self.kmer_size]]
             freqs[kmer_id] = freqs.setdefault(kmer_id, 0) + 1
         return freqs
 
@@ -75,7 +74,7 @@ class KmersCounter(NoFitterTransformer):
         Xt = X.copy()
         Xt['kmers_counts'] = Xt['sequence'].apply(self._transform)
         if self.sparse_output:
-            return to_sparse(Xt['kmers_counts'], update_sparse_data_from_dict, self.dim)
+            return to_sparse(Xt['kmers_counts'], update_sparse_data_from_dict, self.dim_)
         return Xt
 
 
