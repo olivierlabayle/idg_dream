@@ -2,11 +2,14 @@ import unittest
 
 import dgl
 import torch
+import pandas as pd
+import scipy.sparse
+import numpy as np
 from torch import optim
 from torch.nn import MSELoss
 
 from idg_dream.models import Baseline, SparseLinear, GCNLayer, SiameseBiLSTMFingerprints, BiLSTMProteinEmbedder, \
-    GraphBiLSTM, GraphCompoundEmbedder
+    GraphBiLSTM, GraphCompoundEmbedder, ProteinBasedKNN
 from idg_dream.utils import inchi_to_graph
 
 
@@ -295,3 +298,45 @@ class TestGraphBiLSTM(unittest.TestCase):
                 param.data,
                 old_params[i]
             ))
+
+
+class TestProteinBasedKNN(unittest.TestCase):
+    def setUp(self):
+        np.random.seed(0)
+        self.model = ProteinBasedKNN(k=2, ecfp_dim=2 ** 10, radius=4)
+
+    def get_Xy_train(self):
+        X = pd.DataFrame([['A', 'InChI=1/C2H4O2/c1-2(3)4/h1H3,(H,3,4)/f/h3H'],
+                          ['B', 'InChI=1/C2H4O2/c1-2(3)4/h1H3,(H,3,4)/f/h3H'],
+                          ['A', 'InChI=1S/CO2/c2-1-3'],
+                          ['A', 'InChI=1/H2O/h1H2']],
+                         columns=['target_id', 'standard_inchi'])
+        y = np.array([1, 5, 6, 7])
+        return X, y
+
+    def get_Xy_test(self):
+        return pd.DataFrame([['A', 'InChI=1S/H2O2/c1-2/h1-2H'],
+                             ['B', 'InChI=1/C2H4O2/c1-2(3)4/h1H3,(H,3,4)/f/h3H'],
+                             ['A', 'InChI=1/C2H4O2/c1-2(3)4/h1H3,(H,3,4)/f/h3H'],
+                             ['C', 'InChI=1/H2O/h1H2']],
+                            columns=['target_id', 'standard_inchi'])
+
+    def test_fit(self):
+        self.model.fit(*self.get_Xy_train())
+
+        A_store = self.model.store['A']
+        np.testing.assert_array_equal(A_store[1], np.array([1, 6, 7]))
+        self.assertEqual(A_store[0].shape, (3, 2 ** 10))
+        self.assertIsInstance(A_store[0], scipy.sparse.csr_matrix)
+
+        B_store = self.model.store['B']
+        np.testing.assert_array_equal(B_store[1], np.array([5]))
+        self.assertEqual(B_store[0].shape, (1, 2 ** 10))
+        self.assertIsInstance(B_store[0], scipy.sparse.csr_matrix)
+
+    def test_predict(self):
+        self.model.fit(*self.get_Xy_train())
+
+        y_pred = self.model.predict(self.get_Xy_test())
+
+        np.testing.assert_allclose(y_pred, np.array([1., 5., 1.79472271, 7.]))

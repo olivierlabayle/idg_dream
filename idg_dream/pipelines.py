@@ -2,7 +2,7 @@ import torch
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.pipeline import Pipeline, FeatureUnion
 from skorch.regressor import NeuralNetRegressor
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge, Lasso
 from sklearn.svm import SVR
 from torch.optim import SGD
 

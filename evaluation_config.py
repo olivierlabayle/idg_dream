@@ -15,7 +15,7 @@ GRIDS = {
     ],
     "LinearRegressionFactory": [
         {
-            "linear_regression__alpha": [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+            "linear_regression__alpha": [35, 40, 45],
             "sparse_encoding__encode_proteins__kmer_size": [3],
             "sparse_encoding__encode_ecfp__radius": [6],
             "sparse_encoding__encode_ecfp__dim": [2 ** 22]

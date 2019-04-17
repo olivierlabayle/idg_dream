@@ -2,9 +2,13 @@ import dgl
 import torch
 import math
 import torch.nn as nn
-
-
+import numpy as np
+import scipy.sparse
 ### Layers used by subsequent models
+from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.metrics.pairwise import cosine_similarity
+
+from idg_dream.transformers import ECFPEncoder
 
 
 def get_mlp_from_sizes(sizes, activation_last=True):
@@ -204,13 +208,13 @@ class Baseline(SiameseNetwork):
         self.num_kmers = num_kmers
         self.num_fingerprints = num_fingerprints
         self.embedding_dim = embedding_dim
-        self.dropout=dropout
+        self.dropout = dropout
         self._protein_branch = nn.Sequential(SparseLinear(num_kmers, self.embedding_dim),
-                                            nn.ReLU(),
-                                            nn.Dropout(dropout))
-        self._compound_branch = nn.Sequential(SparseLinear(num_fingerprints, self.embedding_dim),
                                              nn.ReLU(),
                                              nn.Dropout(dropout))
+        self._compound_branch = nn.Sequential(SparseLinear(num_fingerprints, self.embedding_dim),
+                                              nn.ReLU(),
+                                              nn.Dropout(dropout))
         self.bilinear = nn.Bilinear(self.embedding_dim, self.embedding_dim, self.embedding_dim)
         self._output_branch = nn.Sequential(
             nn.ReLU(),
@@ -252,10 +256,10 @@ class SiameseBiLSTMFingerprints(SiameseNetwork):
         self.lstm_dropout = lstm_dropout
         # Protein branch layers
         self._protein_branch = BiLSTMProteinEmbedder(num_kmers,
-                                                    embedding_dim,
-                                                    hidden_size,
-                                                    mlp_sizes,
-                                                    dropout=lstm_dropout)
+                                                     embedding_dim,
+                                                     hidden_size,
+                                                     mlp_sizes,
+                                                     dropout=lstm_dropout)
         # Compound branch layers
         self._compound_branch = nn.Sequential(
             SparseLinear(num_fingerprints, self.embedding_dim),
@@ -330,3 +334,47 @@ class GraphBiLSTM(SiameseNetwork):
 
     def output_branch(self, joined):
         return self._output_branch(joined)
+
+
+class ProteinBasedKNN(BaseEstimator, RegressorMixin):
+    def __init__(self, k=1, ecfp_dim=2 ** 10, radius=4, weights='average'):
+        self.k = k
+        self.ecfp_dim = ecfp_dim
+        self.radius = radius
+        self.weights = weights
+
+    def fit(self, X, y):
+        self.store = {}
+        ecfp_transformer = ECFPEncoder(radius=self.radius, dim=self.ecfp_dim, sparse_output=True)
+        for target_id, group in X.groupby('target_id'):
+            self.store[target_id] = (ecfp_transformer.fit_transform(group), y[group.index])
+
+        self.full_ecfp = ecfp_transformer.transform(X)
+        self.full_y = y
+
+        return self
+
+    def predict(self, X):
+        y_preds = []
+        X_copy = X.copy()
+        ecfp_transformer = ECFPEncoder(radius=self.radius, dim=self.ecfp_dim, sparse_output=True)
+        sparse_ecfp = ecfp_transformer.transform(X_copy)
+        for i, row in X.iterrows():
+            # If the target is known
+            target_id = row['target_id']
+            if target_id in self.store:
+                known_ecfps = self.store[target_id][0]
+                sim = cosine_similarity(known_ecfps, sparse_ecfp[i])[:, 0]
+                sorted_indexes = np.argsort(sim, axis=0)
+                ys = self.store[target_id][1][sorted_indexes[-self.k:]]
+                if self.weights == 'uniform':
+                    y_preds.append(np.mean(ys))
+                elif self.weights == 'average':
+                    y_preds.append(np.average(ys, weights=sim[sorted_indexes[-self.k:]]))
+            else:
+                # If the target is unknown
+                ecfp = ecfp_transformer.transform(row.to_frame().T)
+                sim = cosine_similarity(ecfp, self.full_ecfp)[0]
+                y_preds.append(self.full_y[np.argmax(sim)])
+
+        return np.array(y_preds)
