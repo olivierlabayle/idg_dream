@@ -111,7 +111,7 @@ class NNFactory(PipelineFactory):
     def get_steps(self,
                   n_neighbors=1,
                   metric='minkowski',
-                  weights='unifom',
+                  weights='uniform',
                   kmer_size=3,
                   radius=2,
                   ecfp_dim=2 ** 10,
