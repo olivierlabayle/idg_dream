@@ -1,7 +1,9 @@
 import torch
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.pipeline import Pipeline, FeatureUnion
 from skorch.regressor import NeuralNetRegressor
 from sklearn.linear_model import Ridge
+from sklearn.svm import SVR
 from torch.optim import SGD
 
 from idg_dream.models import Baseline, SiameseBiLSTMFingerprints, GraphBiLSTM
@@ -71,7 +73,7 @@ class BaselineNetFactory(PipelineFactory):
         :return: sklearn.pipeline.Pipeline
         """
         kmers_counter = KmersCounter(kmer_size=kmer_size)
-        num_kmers = NB_AMINO_ACID**kmer_size
+        num_kmers = NB_AMINO_ACID ** kmer_size
         collate_fn = partial(collate_to_sparse_tensors,
                              protein_input_size=num_kmers, compound_input_size=ecfp_dim, device=torch.device(device))
         net = NeuralNetRegressor(module=Baseline,
@@ -103,6 +105,23 @@ class LinearRegressionFactory(PipelineFactory):
                 ('encode_ecfp', ECFPEncoder(radius=radius, dim=ecfp_dim, sparse_output=True))
             ])),
             ('linear_regression', Ridge(alpha=alpha))]
+
+
+class NNFactory(PipelineFactory):
+    def get_steps(self,
+                  n_neighbors=1,
+                  metric='minkowski',
+                  weights='unifom',
+                  kmer_size=3,
+                  radius=2,
+                  ecfp_dim=2 ** 10,
+                   device=None):
+        return [
+            ('sparse_encoding', FeatureUnion(n_jobs=-1, transformer_list=[
+                ('encode_proteins', KmersCounter(kmer_size=kmer_size, sparse_output=True)),
+                ('encode_ecfp', ECFPEncoder(radius=radius, dim=ecfp_dim, sparse_output=True))
+            ])),
+            ('nn', KNeighborsRegressor(n_neighbors=n_neighbors, metric=metric, weights=weights))]
 
 
 class BiLSTMFingerprintFactory(PipelineFactory):

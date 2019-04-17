@@ -3,7 +3,7 @@ from torch.optim import *
 GRIDS = {
     "BaselineNetFactory": [
         {
-            "encode_proteins__kmer_size": [3, 5, 7],
+            "encode_proteins__kmer_size": [3, 5],
             "encode_ecfp__radius": [4],
             "encode_ecfp__dim": [2 ** 10],
             "baseline_net__module__num_fingerprints": [2 ** 10],
@@ -15,8 +15,17 @@ GRIDS = {
     ],
     "LinearRegressionFactory": [
         {
-            "linear_regression__alpha": [100, 1000],
-            "sparse_encoding__encode_proteins__kmer_size": [7],
+            "sparse_encoding__encode_proteins__kmer_size": [3],
+            "sparse_encoding__encode_ecfp__radius": [6],
+            "sparse_encoding__encode_ecfp__dim": [2 ** 22],
+            "n_neighbors": [1, 2, 3, 4, 5],
+            "metric": ['minkowski'],
+            "weights": ['unifom'],
+        }
+    ],
+    "NNFactory": [
+        {
+            "sparse_encoding__encode_proteins__kmer_size": [3],
             "sparse_encoding__encode_ecfp__radius": [6],
             "sparse_encoding__encode_ecfp__dim": [2 ** 22]
         }
