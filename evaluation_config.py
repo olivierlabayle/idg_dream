@@ -26,9 +26,9 @@ GRIDS = {
             "sparse_encoding__encode_proteins__kmer_size": [3],
             "sparse_encoding__encode_ecfp__radius": [6],
             "sparse_encoding__encode_ecfp__dim": [2 ** 22],
-            "n_neighbors": [1, 2, 3, 4, 5],
-            "metric": ['minkowski'],
-            "weights": ['uniform'],
+            "nn__n_neighbors": [1, 2, 3, 4, 5],
+            "nn__metric": ['minkowski'],
+            "nn__weights": ['uniform'],
         }
     ],
     "BiLSTMFingerprintFactory": [
