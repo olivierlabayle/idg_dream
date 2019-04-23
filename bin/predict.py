@@ -29,6 +29,7 @@ def main(model_path, template_path, output_path, db_host='127.0.0.1', db_port='5
     X.rename(columns={"standard_inchi_key": "Compound_InchiKeys", "target_id": "UniProt_Id"}, inplace=True)
     X.drop(['standard_inchi', 'sequence'], axis=1, inplace=True)
     X.to_csv(output_path, index=False)
+    print("Predictions saved")
 
 
 if __name__ == '__main__':

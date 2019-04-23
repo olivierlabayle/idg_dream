@@ -15,20 +15,18 @@ GRIDS = {
     ],
     "LinearRegressionFactory": [
         {
-            "linear_regression__alpha": [35, 40, 45],
-            "sparse_encoding__encode_proteins__kmer_size": [3],
+            "linear_regression__alpha": [20, 30, 40, 50, 60, 70],
+            "sparse_encoding__encode_proteins__kmer_size": [4],
             "sparse_encoding__encode_ecfp__radius": [6],
             "sparse_encoding__encode_ecfp__dim": [2 ** 22]
         }
     ],
     "NNFactory": [
         {
-            "sparse_encoding__encode_proteins__kmer_size": [3],
-            "sparse_encoding__encode_ecfp__radius": [6],
-            "sparse_encoding__encode_ecfp__dim": [2 ** 22],
-            "nn__n_neighbors": [1, 2, 3, 4, 5],
-            "nn__metric": ['minkowski'],
-            "nn__weights": ['uniform'],
+            "nn__k": [5, 10],
+            "nn__weights": ['average'],
+            "nn__radius": [6],
+            "nn__ecfp_dim": [2 ** 22]
         }
     ],
     "BiLSTMFingerprintFactory": [

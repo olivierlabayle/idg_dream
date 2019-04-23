@@ -339,4 +339,4 @@ class TestProteinBasedKNN(unittest.TestCase):
 
         y_pred = self.model.predict(self.get_Xy_test())
 
-        np.testing.assert_allclose(y_pred, np.array([1., 5., 1.79472271, 7.]))
+        np.testing.assert_allclose(y_pred, np.array([[1.], [5.], [1.79472271], [7.]]))

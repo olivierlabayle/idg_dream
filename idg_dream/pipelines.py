@@ -6,7 +6,7 @@ from sklearn.linear_model import Ridge, Lasso
 from sklearn.svm import SVR
 from torch.optim import SGD
 
-from idg_dream.models import Baseline, SiameseBiLSTMFingerprints, GraphBiLSTM
+from idg_dream.models import Baseline, SiameseBiLSTMFingerprints, GraphBiLSTM, ProteinBasedKNN
 from idg_dream.transformers import InchiLoader, SequenceLoader, KmersCounter, ECFPEncoder, DfToDict, KmerEncoder, \
     InchiToDG
 from functools import partial
@@ -109,19 +109,12 @@ class LinearRegressionFactory(PipelineFactory):
 
 class NNFactory(PipelineFactory):
     def get_steps(self,
-                  n_neighbors=1,
-                  metric='minkowski',
-                  weights='uniform',
-                  kmer_size=3,
+                  k=1,
+                  weights='average',
                   radius=2,
                   ecfp_dim=2 ** 10,
-                   device=None):
-        return [
-            ('sparse_encoding', FeatureUnion(n_jobs=-1, transformer_list=[
-                ('encode_proteins', KmersCounter(kmer_size=kmer_size, sparse_output=True)),
-                ('encode_ecfp', ECFPEncoder(radius=radius, dim=ecfp_dim, sparse_output=True))
-            ])),
-            ('nn', KNeighborsRegressor(n_neighbors=n_neighbors, metric=metric, weights=weights))]
+                  device=None):
+        return [('nn', ProteinBasedKNN(k=k, ecfp_dim=ecfp_dim,radius=radius, weights=weights))]
 
 
 class BiLSTMFingerprintFactory(PipelineFactory):

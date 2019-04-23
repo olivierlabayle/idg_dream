@@ -344,6 +344,8 @@ class ProteinBasedKNN(BaseEstimator, RegressorMixin):
         self.weights = weights
 
     def fit(self, X, y):
+        y = y.reshape(-1)
+        X.index = range(len(X))
         self.store = {}
         ecfp_transformer = ECFPEncoder(radius=self.radius, dim=self.ecfp_dim, sparse_output=True)
         for target_id, group in X.groupby('target_id'):
@@ -357,9 +359,10 @@ class ProteinBasedKNN(BaseEstimator, RegressorMixin):
     def predict(self, X):
         y_preds = []
         X_copy = X.copy()
+        X_copy.index = range(len(X_copy))
         ecfp_transformer = ECFPEncoder(radius=self.radius, dim=self.ecfp_dim, sparse_output=True)
         sparse_ecfp = ecfp_transformer.transform(X_copy)
-        for i, row in X.iterrows():
+        for i, row in X_copy.iterrows():
             # If the target is known
             target_id = row['target_id']
             if target_id in self.store:
@@ -377,4 +380,4 @@ class ProteinBasedKNN(BaseEstimator, RegressorMixin):
                 sim = cosine_similarity(ecfp, self.full_ecfp)[0]
                 y_preds.append(self.full_y[np.argmax(sim)])
 
-        return np.array(y_preds)
+        return np.array(y_preds).reshape((len(y_preds), 1))

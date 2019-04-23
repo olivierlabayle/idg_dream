@@ -17,10 +17,10 @@ CONFIG = {
             "train_split": CVSplit(0.2, random_state=0)
         },
     "LinearRegressionFactory":
-        {'alpha': 100,
+        {'alpha': 50,
          'ecfp_dim': 2**22,
          'radius': 6,
-         'kmer_size': 3}
+         'kmer_size': 4}
     ,
     "BiLSTMFingerprintFactory":
         {
